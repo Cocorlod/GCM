@@ -10,11 +10,6 @@ git commit -m "Hola prueba" (cambios)
 git remote add origin https://github.com/Cocorlod/Laberinto2026 (añade repositorio)
 git push -u origin main (push)
 ```
-Si da error, una solución puede ser:
-
-```
-git pull origin main --rebase (Actualliza al repositorio actual)
-```
 
 Documentación del proyecto:
 
