@@ -1,5 +1,6 @@
 # Laberinto2026
-Repositorio del proyecto de robot de laberinto. Se incluyen codigos y explicaciones de los distintos segmentos del robot.
+Repositorio del proyecto de robot de laberinto. Se incluyen codigos, placas y explicaciones de los distintos segmentos del robot.
+
 Como hacer cambios al repositorio:
 
 ```
