@@ -11,6 +11,12 @@ git remote add origin https://github.com/Cocorlod/Laberinto2026 (añade reposito
 git push -u origin main (push)
 ```
 
+Actualizar repositorio local:
+
+```
+git pull origin main
+```
+
 Documentación del proyecto:
 
 [Documentación](https://docs.google.com/document/d/1NPHLxxiQSUsjNDt6-OVHN-gjC-Y5Gtj-fb6HxMiVVUs/edit?usp=sharing)
