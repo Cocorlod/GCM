@@ -17,4 +17,4 @@ git pull origin main --rebase (Actualliza al repositorio actual)
 
 Documentación del proyecto:
 
-(https://docs.google.com/document/d/1NPHLxxiQSUsjNDt6-OVHN-gjC-Y5Gtj-fb6HxMiVVUs/edit?usp=sharing)
+[Documentación](https://docs.google.com/document/d/1NPHLxxiQSUsjNDt6-OVHN-gjC-Y5Gtj-fb6HxMiVVUs/edit?usp=sharing)
