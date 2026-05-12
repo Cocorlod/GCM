@@ -100,7 +100,7 @@ GenerateClassCluster=0
 DocumentUniqueId=YRFEAVNK
 
 [Document4]
-DocumentPath=GCMPrototipo1\GCMProtPCB.PcbLib
+DocumentPath=GCMPrototipo1\GCMPrototipo.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
