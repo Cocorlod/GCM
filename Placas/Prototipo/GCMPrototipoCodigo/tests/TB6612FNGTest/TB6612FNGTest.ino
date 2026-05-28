@@ -27,7 +27,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
-  ledcWrite(PWMA, 200);
+  ledcWrite(PWMA, 255);
   delay(2000);
 
   digitalWrite(AIN1, LOW);
