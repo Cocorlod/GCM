@@ -12,7 +12,7 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  Wire.begin(11, 12);
+  Wire.begin(12, 11);
 
   pinMode(XSHUT_1, OUTPUT);
   pinMode(XSHUT_2, OUTPUT);
