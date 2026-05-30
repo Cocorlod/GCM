@@ -66,23 +66,6 @@ GenerateClassCluster=0
 DocumentUniqueId=AHAKVLQQ
 
 [Document2]
-DocumentPath=GCMProtPCB.PcbDoc
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-DocumentUniqueId=UPOUSHOU
-
-[Document3]
 DocumentPath=GCMPrototipo1\GCMPrototipo.SCHLIB
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -99,7 +82,7 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=YRFEAVNK
 
-[Document4]
+[Document3]
 DocumentPath=GCMPrototipo1\GCMPrototipo.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -116,7 +99,7 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=NUTORHTD
 
-[Document5]
+[Document4]
 DocumentPath=GCMProtoPCB.PcbDoc
 AnnotationEnabled=1
 AnnotateStartValue=1

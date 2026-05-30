@@ -2,7 +2,7 @@
 #include <VL53L1X.h>
 
 #define XSHUT_1 1
-#define XSHUT_2 2
+#define XSHUT_2 5
 
 VL53L1X sensor1;
 VL53L1X sensor2;

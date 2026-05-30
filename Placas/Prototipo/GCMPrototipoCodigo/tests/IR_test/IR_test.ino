@@ -2,7 +2,7 @@
 pero hay que ajustar el umbral segun el material que se use en la pista del laberinto
 este codigo es para testear y ver los valores del umbral para poder calibrr los sensores*/
 
-#define SENSOR_PIN 9  // Cambiá según tu conexión
+#define SENSOR_PIN 15  // Cambiá según tu conexión
 
 int valor = 0;
 int umbral = 2000; // después lo ajustamos
