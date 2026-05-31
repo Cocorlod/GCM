@@ -2044,3 +2044,10 @@ int main() {
     planner.run();
     return 0;
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Changes for 4.1 Version:
+// -Remove PID Wall-Centering from the Speed Run section 
+// -Add the PID Wall-Centering to the Scout section
+// -Add PD control to the Speed Run Section
+// ───────────────────────────────────────────────────────────────────────────
