@@ -2119,10 +2119,4 @@ int main() {
 // explorer navigates by greedy utility + a fresh FloodFill/Theta* for frontier hops. The
 // incremental replanning machinery runs but its output duplicates FloodFill rather than
 // driving decisions.
-//
-//
-//
-// Suggestions for GDW Beta 4.2:
-// -When returning back to the starting point the robot should explore a different path so that it 
-// can take it into consideration
 // ───────────────────────────────────────────────────────────────────────────
