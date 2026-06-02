@@ -2091,3 +2091,38 @@ int main() {
     planner.run();
     return 0;
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Bugs to fix for GDW Beta 4.2:
+//  -D Lite infinite loop / bad_alloc* — locally-consistent nodes (g==rhs) fell into the
+//  underconsistent branch, which re-raised g to ∞ and re-queued the node forever on dense
+//  mazes. Fixed to handle only the strictly-underconsistent case (plus an expansion cap).
+//
+// -Exploration stall — sensing reveals all four walls on arrival, so no visited cell was ever a
+// "frontier"; the frontier set was always empty and exploration quit early. Replaced with
+// canonical flood-fill exploration (reaches the goal on 20/20 random mazes tested).
+//
+// -TVLQR NaN — the forward-Euler Riccati diverged for large dt = ds/v near v→0. Clamped dt
+// and sanitized the gains.
+//
+// -Dead-reckoning is noise-free too. kf.predict() is always called with (cellSize, 0.0f, 0.01f) —
+// exact step, zero heading change, no encoder error, no gyro drift. The reported "localization
+// error" therefore isn't a physically meaningful quantity; the ESKF runs on near-perfect data.
+//
+// -The PD "200 Hz simulation" isn't physically coherent. The loop iterates once per trajectory
+// sample (spaced by arc length) but integrates the pose by vCmd * 0.005s per iteration, so
+// total integrated time and the reference-index advance are unrelated. vCmd is also just
+// ref.velocity (open-loop on speed). The pose starts exactly on the path under zero
+// disturbance, so the small cross-track numbers it prints are tautological.
+//
+// -D Lite is largely vestigial*. It computes g-values and mirrors them into floodDist, but the
+// explorer navigates by greedy utility + a fresh FloodFill/Theta* for frontier hops. The
+// incremental replanning machinery runs but its output duplicates FloodFill rather than
+// driving decisions.
+//
+//
+//
+// Suggestions for GDW Beta 4.2:
+// -When returning back to the starting point the robot should explore a different path so that it 
+// can take it into consideration
+// ───────────────────────────────────────────────────────────────────────────
