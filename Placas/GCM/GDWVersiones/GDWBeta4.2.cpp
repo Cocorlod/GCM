@@ -2000,3 +2000,9 @@ int main() {
     planner.run();
     return 0;
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Suggestion for future GDW:
+// -When returning back to the starting point the robot should explore a different path so that it 
+// can take it into consideration for the speedrun
+// ───────────────────────────────────────────────────────────────────────────
