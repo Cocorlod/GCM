@@ -83,7 +83,7 @@ GenerateClassCluster=0
 DocumentUniqueId=FWQMNDYJ
 
 [Document3]
-DocumentPath=GCMPrototipo1\GCMLibreriasPCB.PcbLib
+DocumentPath=GCMLibrerias\GCMLibreriasPCB.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
@@ -97,10 +97,10 @@ ClassGenCCAutoRoomEnabled=1
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=NUTORHTD
 
 [Document4]
-DocumentPath=GCMPrototipo1\GCMLibreriasSCH.SCHLIB
+DocumentPath=GCMLibrerias\GCMLibreriasSCH.SCHLIB
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
@@ -114,7 +114,7 @@ ClassGenCCAutoRoomEnabled=1
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=YRFEAVNK
 
 [Configuration1]
 Name=Sources
