@@ -3,9 +3,17 @@
 
 #define XSHUT_1 1
 #define XSHUT_2 5
+#define XSHUT_3 2
+#define XSHUT_4 37
+#define XSHUT_5 36
+#define XSHUT_6 7
 
 VL53L1X sensor1;
 VL53L1X sensor2;
+VL53L1X sensor3;
+VL53L1X sensor4;
+VL53L1X sensor5;
+VL53L1X sensor6;
 
 void setup() {
 
@@ -16,10 +24,18 @@ void setup() {
 
   pinMode(XSHUT_1, OUTPUT);
   pinMode(XSHUT_2, OUTPUT);
+  pinMode(XSHUT_3, OUTPUT);
+  pinMode(XSHUT_4, OUTPUT);
+  pinMode(XSHUT_5, OUTPUT);
+  pinMode(XSHUT_6, OUTPUT);
 
-  // Apagar ambos
+  // Apagar 
   digitalWrite(XSHUT_1, LOW);
   digitalWrite(XSHUT_2, LOW);
+  digitalWrite(XSHUT_3, LOW);
+  digitalWrite(XSHUT_4, LOW);
+  digitalWrite(XSHUT_5, LOW);
+  digitalWrite(XSHUT_6, LOW);
 
   delay(100);
 
