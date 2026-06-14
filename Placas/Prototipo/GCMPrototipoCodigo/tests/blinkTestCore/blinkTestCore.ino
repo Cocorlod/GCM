@@ -1,4 +1,4 @@
-const int ledPin = 3; 
+const int ledPin = 38; 
 
 void setup() {
   // Initialize the digital pin as an output
