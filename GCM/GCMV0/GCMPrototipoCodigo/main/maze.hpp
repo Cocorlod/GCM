@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <stdint.h>
+#include "ToF_Setup.hpp"
 
 constexpr uint16_t MAZE_MAX_CELLS = 1024;
 
@@ -20,6 +21,13 @@ enum WallDir : uint8_t {
     WALL_W = 8
 };
 
+enum Heading : uint8_t {
+    NORTH = 0,
+    EAST,
+    SOUTH,
+    WEST
+};
+
 class Maze {
     public:
         int16_t addCell();
@@ -34,6 +42,8 @@ class Maze {
         void setGoal(uint16_t index);
         bool isGoal(uint16_t index) const;
 
+        void mazeUpdate(Maze& maze, ToFSensor& tof, Heading heading);
+        WallDir localToGlobal(WallSides side, Heading heading) const;
     private:
         Cell cells[MAZE_MAX_CELLS];
         uint16_t count = 0;

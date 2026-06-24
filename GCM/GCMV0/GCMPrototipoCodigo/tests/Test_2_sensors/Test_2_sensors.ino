@@ -2,21 +2,12 @@
 #include <VL53L1X.h>
 
 #define XSHUT_1 1
-#define XSHUT_2 5
-#define XSHUT_3 2
-#define XSHUT_4 37
-#define XSHUT_5 36
-#define XSHUT_6 7
+#define XSHUT_2 7
 
 VL53L1X sensor1;
 VL53L1X sensor2;
-VL53L1X sensor3;
-VL53L1X sensor4;
-VL53L1X sensor5;
-VL53L1X sensor6;
 
 void setup() {
-
   Serial.begin(115200);
   delay(1000);
 
@@ -24,25 +15,16 @@ void setup() {
 
   pinMode(XSHUT_1, OUTPUT);
   pinMode(XSHUT_2, OUTPUT);
-  pinMode(XSHUT_3, OUTPUT);
-  pinMode(XSHUT_4, OUTPUT);
-  pinMode(XSHUT_5, OUTPUT);
-  pinMode(XSHUT_6, OUTPUT);
 
-  // Apagar 
+  // Turn off both sensors
   digitalWrite(XSHUT_1, LOW);
   digitalWrite(XSHUT_2, LOW);
-  digitalWrite(XSHUT_3, LOW);
-  digitalWrite(XSHUT_4, LOW);
-  digitalWrite(XSHUT_5, LOW);
-  digitalWrite(XSHUT_6, LOW);
 
   delay(100);
 
   // =====================
   // SENSOR 1
   // =====================
-
   digitalWrite(XSHUT_1, HIGH);
   delay(100);
 
@@ -58,7 +40,6 @@ void setup() {
   // =====================
   // SENSOR 2
   // =====================
-
   digitalWrite(XSHUT_2, HIGH);
   delay(100);
 
@@ -69,27 +50,24 @@ void setup() {
     while (1);
   }
 
-  // sensor2 queda en 0x29
+  // Sensor 2 remains at default address 0x29
 
   sensor1.startContinuous(50);
   sensor2.startContinuous(50);
 
-  Serial.println("Sensores OK");
+  Serial.println("Sensors OK");
 }
 
 void loop() {
-
   int d1 = sensor1.read();
   int d2 = sensor2.read();
 
   Serial.print("S1: ");
   Serial.print(d1);
-
   Serial.print(" mm   ");
 
   Serial.print("S2: ");
   Serial.print(d2);
-
   Serial.println(" mm");
 
   delay(100);

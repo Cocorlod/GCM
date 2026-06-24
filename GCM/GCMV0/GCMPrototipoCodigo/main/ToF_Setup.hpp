@@ -27,8 +27,8 @@ XSHUT6-> LF 5
 #define SENSOR_COUNT 6
 
 static constexpr float MAX_ALLOWED_DIFF = 95.0f;
-static constexpr float FRONT_WALL_THRESHOLD = 97.0f;
-static constexpr float SIDE_WALL_THRESHOLD  = 92.0f;
+static constexpr float FRONT_WALL_THRESHOLD = 94.0f;
+static constexpr float SIDE_WALL_THRESHOLD  = 89.0f;
 
 enum SensorID : uint8_t {
 
@@ -42,6 +42,12 @@ enum SensorID : uint8_t {
     LEFT_F
 };
 
+enum WallSides : int8_t {
+    FRONT = 0,
+    RIGHT = 1,
+    LEFT = -1
+};
+
 class ToFSensor {
     public:
         bool beginToF();
@@ -49,20 +55,13 @@ class ToFSensor {
         void update();
     
         bool allSensorsOk() const;
+        bool isThereWall(WallSides side) const;
 
-        bool isThereFrontWall() const;
-        bool isThereLeftWall() const;
-        bool isThereRightWall() const;
-
-        float frontWallDistance() const;
-        float leftWallDistance() const;
-        float rightWallDistance() const;
-
-        float leftAlignmentError() const;
-        float rightAlignmentError() const;
+        int16_t wallDistance(WallSides side) const; 
+        
+        int16_t alignmentError(WallSides side) const;
 
         uint16_t getDistance(SensorID id) const;
-
     private:
         VL53L1X sensor[SENSOR_COUNT];
         bool ok[SENSOR_COUNT] = {false};

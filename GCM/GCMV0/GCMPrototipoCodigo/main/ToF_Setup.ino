@@ -71,47 +71,52 @@ bool ToFSensor::allSensorsOk() const {
     return true;
 }
 
-bool ToFSensor::isThereFrontWall() const {
-    return frontWallDistance() < FRONT_WALL_THRESHOLD;
-}
-
-bool ToFSensor::isThereLeftWall() const {
-    return leftWallDistance() < SIDE_WALL_THRESHOLD;
-}
-
-bool ToFSensor::isThereRightWall() const {
-    return rightWallDistance() < SIDE_WALL_THRESHOLD;
-}
-
-float ToFSensor::frontWallDistance() const   {
-    if(abs((int)distance[FRONT_L] - (int)distance[FRONT_R]) < MAX_ALLOWED_DIFF) {
-        return (distance[FRONT_L] + distance[FRONT_R])/2.0f;
-    } 
-    return min(distance[FRONT_L], distance[FRONT_R]);
-}
-
-float ToFSensor::rightWallDistance() const {
-    if(abs((int)distance[RIGHT_F] - (int)distance[RIGHT_B]) < MAX_ALLOWED_DIFF) {
-        return (distance[RIGHT_F] + distance[RIGHT_B])/2.0f;
+bool ToFSensor::isThereWall(WallSides side) const {
+    switch(side) {
+        case FRONT:
+            return wallDistance(side) < FRONT_WALL_THRESHOLD;
+        case LEFT:
+            return wallDistance(side) < SIDE_WALL_THRESHOLD;
+        case RIGHT:
+            return wallDistance(side) < SIDE_WALL_THRESHOLD;
+        default:
+            return false;
     }
-    return min(distance[RIGHT_F], distance[RIGHT_B]);
 }
 
-float ToFSensor::leftWallDistance() const {
-    if(abs((int)distance[LEFT_F] - (int)distance[LEFT_B]) < MAX_ALLOWED_DIFF) {
-        return (distance[LEFT_F] + distance[LEFT_B])/2.0f;
+int16_t ToFSensor::wallDistance(WallSides side) const {
+    switch(side) {
+        case FRONT:
+            if(abs((int)distance[FRONT_L] - (int)distance[FRONT_R]) < MAX_ALLOWED_DIFF) {
+                return (distance[FRONT_L] + distance[FRONT_R])/2.0f;
+            } 
+            return min(distance[FRONT_L], distance[FRONT_R]);
+        case LEFT:
+            if(abs((int)distance[LEFT_F] - (int)distance[LEFT_B]) < MAX_ALLOWED_DIFF) {
+                return (distance[LEFT_F] + distance[LEFT_B])/2.0f;
+            }
+            return min(distance[LEFT_F], distance[LEFT_B]);
+        case RIGHT:
+            if(abs((int)distance[RIGHT_F] - (int)distance[RIGHT_B]) < MAX_ALLOWED_DIFF) {
+                return (distance[RIGHT_F] + distance[RIGHT_B])/2.0f;
+            }
+            return min(distance[RIGHT_F], distance[RIGHT_B]);
+        default:
+            return 0.0f;
     }
-    return min(distance[LEFT_F], distance[LEFT_B]);
 }
 
-float ToFSensor::leftAlignmentError() const {
-    if(!isThereLeftWall()) return 0.0f;
-    return (float)distance[LEFT_F] - (float)distance[LEFT_B];
-}
+int16_t ToFSensor::alignmentError(WallSides side) const {
+    if(!isThereWall(side)) return 0;
 
-float ToFSensor::rightAlignmentError() const {
-    if(!isThereRightWall()) return 0.0f;
-    return (float)distance[RIGHT_F] - (float)distance[RIGHT_B];
+    switch(side) {
+        case LEFT:
+            return (float)distance[LEFT_F] - (float)distance[LEFT_B];
+        case RIGHT:
+            return (float)distance[RIGHT_F] - (float)distance[RIGHT_B];
+        default:
+            return 0;
+    }  
 }
 
 uint16_t ToFSensor::getDistance(SensorID id) const {
