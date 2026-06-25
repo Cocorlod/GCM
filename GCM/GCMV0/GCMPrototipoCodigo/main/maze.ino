@@ -36,28 +36,43 @@ bool Maze::isGoal(uint16_t index) const {
     return cells[index].goal;
 }
 
-void Maze::mazeUpdate(ToFSensor& tof, Heading heading) {
-    bool cellAdded = cellAdded();
-
-    if(!cellAdded) {
-        uint16_t currentIndex = maze.cellCount() - 1;  
-    
-        if (tof.isThereWall(FRONT)) {
-            maze.setWall(currentIndex, localToGlobal(FRONT, heading));
-        }
-        if(tof.isThereWall(LEFT)) {
-            maze.setWall(currentIndex, localToGlobal(LEFT, heading));
-        }
-        if(tof.isThereWall(RIGHT)) {
-            maze.setWall(currentIndex, localToGlobal(RIGHT, heading));
-        }
-
-        maze.addCell();
+void Maze::mazeUpdate(ToFSensor& tof, Heading heading) {;
+    uint16_t currentIndex = cellCount() - 1;  
+    if(tof.isThereWall(FRONT)) {
+        setWall(currentIndex, localToGlobal(FRONT, heading));
     }
-    cellAdded = true;
+
+    if(tof.isThereWall(LEFT)) {
+        setWall(currentIndex, localToGlobal(LEFT, heading));
+    }
+
+    if(tof.isThereWall(RIGHT)) {
+        setWall(currentIndex, localToGlobal(RIGHT, heading));
+    }
 }
 
 WallDir Maze::localToGlobal(WallSides side, Heading heading) const {
     int dir = ((int)heading + (int)side + 4) % 4;
     return (WallDir)(1 << dir);
+}
+
+void Maze::updateCoordinates(Heading heading) {
+    if(count == 0) {
+        cells[0].x = 0;
+        cells[0].y = 0;
+        return;
+    }
+
+    cells[count].x = cells[count - 1].x;   
+    cells[count].y = cells[count - 1].y;
+
+    if(heading == NORTH) {
+        cells[count].y++;
+    } else if(heading == EAST) {
+        cells[count].x++;
+    } else if(heading == SOUTH) {
+        cells[count].y--;
+    } else if(heading == WEST) {
+        cells[count].x--;
+    }
 }

@@ -15,6 +15,13 @@ VL53L1X sensor4;
 VL53L1X sensor5;
 VL53L1X sensor6;
 
+bool sensor1_ok = false;
+bool sensor2_ok = false;
+bool sensor3_ok = false;
+bool sensor4_ok = false;
+bool sensor5_ok = false;
+bool sensor6_ok = false;
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -45,9 +52,10 @@ void setup() {
   sensor1.setTimeout(500);
   if (!sensor1.init()) {
     Serial.println("Error sensor 1");
-    while (1);
+  } else {
+    sensor1_ok = true;
+    sensor1.setAddress(0x30);
   }
-  sensor1.setAddress(0x30);
 
   // Sensor 2
   digitalWrite(XSHUT_2, HIGH);
@@ -56,9 +64,10 @@ void setup() {
   sensor2.setTimeout(500);
   if (!sensor2.init()) {
     Serial.println("Error sensor 2");
-    while (1);
+  } else {
+    sensor2_ok = true;
+    sensor2.setAddress(0x31);
   }
-  sensor2.setAddress(0x31);
 
   // Sensor 3
   digitalWrite(XSHUT_3, HIGH);
@@ -67,9 +76,10 @@ void setup() {
   sensor3.setTimeout(500);
   if (!sensor3.init()) {
     Serial.println("Error sensor 3");
-    while (1);
+  } else {
+    sensor3_ok = true;
+    sensor3.setAddress(0x32);
   }
-  sensor3.setAddress(0x32);
 
   // Sensor 4
   digitalWrite(XSHUT_4, HIGH);
@@ -78,9 +88,10 @@ void setup() {
   sensor4.setTimeout(500);
   if (!sensor4.init()) {
     Serial.println("Error sensor 4");
-    while (1);
+  } else {
+    sensor4_ok = true;
+    sensor4.setAddress(0x33);
   }
-  sensor4.setAddress(0x33);
 
   // Sensor 5
   digitalWrite(XSHUT_5, HIGH);
@@ -89,9 +100,10 @@ void setup() {
   sensor5.setTimeout(500);
   if (!sensor5.init()) {
     Serial.println("Error sensor 5");
-    while (1);
+  } else {
+    sensor5_ok = true;
+    sensor5.setAddress(0x34);
   }
-  sensor5.setAddress(0x34);
 
   // Sensor 6
   digitalWrite(XSHUT_6, HIGH);
@@ -100,28 +112,36 @@ void setup() {
   sensor6.setTimeout(500);
   if (!sensor6.init()) {
     Serial.println("Error sensor 6");
-    while (1);
+  } else {
+    sensor6_ok = true;
+    sensor6.setAddress(0x35);
   }
-  sensor6.setAddress(0x35);
 
-  // Start ranging
-  sensor1.startContinuous(50);
-  sensor2.startContinuous(50);
-  sensor3.startContinuous(50);
-  sensor4.startContinuous(50);
-  sensor5.startContinuous(50);
-  sensor6.startContinuous(50);
+  // Start ranging only on working sensors
+  if (sensor1_ok) sensor1.startContinuous(50);
+  if (sensor2_ok) sensor2.startContinuous(50);
+  if (sensor3_ok) sensor3.startContinuous(50);
+  if (sensor4_ok) sensor4.startContinuous(50);
+  if (sensor5_ok) sensor5.startContinuous(50);
+  if (sensor6_ok) sensor6.startContinuous(50);
 
-  Serial.println("All 6 sensors initialized");
+  Serial.println("Initialization complete");
+
+  if (!sensor1_ok) Serial.println("Sensor 1 offline");
+  if (!sensor2_ok) Serial.println("Sensor 2 offline");
+  if (!sensor3_ok) Serial.println("Sensor 3 offline");
+  if (!sensor4_ok) Serial.println("Sensor 4 offline");
+  if (!sensor5_ok) Serial.println("Sensor 5 offline");
+  if (!sensor6_ok) Serial.println("Sensor 6 offline");
 }
 
 void loop() {
-  int d1 = sensor1.read();
-  int d2 = sensor2.read();
-  int d3 = sensor3.read();
-  int d4 = sensor4.read();
-  int d5 = sensor5.read();
-  int d6 = sensor6.read();
+  int d1 = sensor1_ok ? sensor1.read() : 0;
+  int d2 = sensor2_ok ? sensor2.read() : 0;
+  int d3 = sensor3_ok ? sensor3.read() : 0;
+  int d4 = sensor4_ok ? sensor4.read() : 0;
+  int d5 = sensor5_ok ? sensor5.read() : 0;
+  int d6 = sensor6_ok ? sensor6.read() : 0;
 
   Serial.print("S1: ");
   Serial.print(d1);

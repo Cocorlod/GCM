@@ -26,9 +26,11 @@ XSHUT6-> LF 5
 #define PIN_XSHUT6 7
 #define SENSOR_COUNT 6
 
-static constexpr float MAX_ALLOWED_DIFF = 95.0f;
-static constexpr float FRONT_WALL_THRESHOLD = 94.0f;
-static constexpr float SIDE_WALL_THRESHOLD  = 89.0f;
+static constexpr int16_t MAX_ALLOWED_DIFF = 90;
+static constexpr int16_t FRONT_WALL_THRESHOLD = 250;
+static constexpr int16_t SIDE_WALL_THRESHOLD = 250;
+static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
+static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
 
 enum SensorID : uint8_t {
 
@@ -57,7 +59,7 @@ class ToFSensor {
         bool allSensorsOk() const;
         bool isThereWall(WallSides side) const;
 
-        int16_t wallDistance(WallSides side) const; 
+        float wallDistance(WallSides side) const; 
         
         int16_t alignmentError(WallSides side) const;
 

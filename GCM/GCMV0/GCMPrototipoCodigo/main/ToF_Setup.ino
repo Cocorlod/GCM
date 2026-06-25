@@ -84,7 +84,31 @@ bool ToFSensor::isThereWall(WallSides side) const {
     }
 }
 
-int16_t ToFSensor::wallDistance(WallSides side) const {
+bool ToFSensor::isCentered() const {
+    bool frontCentered = abs(wallDistance(FRONT) - FRONT_WALL_THRESHOLD_CENTER) <= 2;
+    bool leftCentered = abs(wallDistance(LEFT) - SIDE_WALL_THRESHOLD_CENTER) <= 2;
+    bool rightCentered = abs(wallDistance(RIGHT) - SIDE_WALL_THRESHOLD_CENTER) <= 2;
+
+    if (isThereWall(FRONT)) {
+        return frontCentered && ((leftCentered && isThereWall(LEFT)) || (rightCentered && isThereWall(RIGHT)));
+    }
+
+    if(isThereWall(LEFT) && isThereWall(RIGHT)) {
+        return leftCentered && rightCentered;
+    }
+
+    if(isThereWall(LEFT)) {
+        return leftCentered;
+    }
+    
+    if(isThereWall(RIGHT)) {
+        return rightCentered;
+    }
+    /*Evaluar por dead reckoning*/
+    return false;
+}
+
+float ToFSensor::wallDistance(WallSides side) const {
     switch(side) {
         case FRONT:
             if(abs((int)distance[FRONT_L] - (int)distance[FRONT_R]) < MAX_ALLOWED_DIFF) {
@@ -111,9 +135,9 @@ int16_t ToFSensor::alignmentError(WallSides side) const {
 
     switch(side) {
         case LEFT:
-            return (float)distance[LEFT_F] - (float)distance[LEFT_B];
+            return (uint16_t)distance[LEFT_F] - (uint16_t)distance[LEFT_B];
         case RIGHT:
-            return (float)distance[RIGHT_F] - (float)distance[RIGHT_B];
+            return (uint16_t)distance[RIGHT_F] - (uint16_t)distance[RIGHT_B];
         default:
             return 0;
     }  

@@ -7,11 +7,14 @@
 constexpr uint16_t MAZE_MAX_CELLS = 1024;
 
 struct Cell {
-    uint8_t wallDirections = 0; // Utilizamos una bitmask 
-    // para guardar en una unica variable la existencia de las paredes en esa 
-    // celda en el eje cardinal
+    uint8_t wallDirections = 0; 
+    // Utilizamos una bitmask  para guardar en una unica variable la
+    // existencia de las paredes en esa celda en el eje cardinal
 
     bool goal = false;
+
+    int16_t x = 0;
+    int16_t y = 0;
 };
 
 enum WallDir : uint8_t {
@@ -37,13 +40,15 @@ class Maze {
         uint16_t cellCount() const;
 
         void setWall(uint16_t index, WallDir dir);
-        bool isWall(uint16_t index, WallDir dir) const;
+        bool isThereWall(uint16_t index, WallDir dir) const;
 
         void setGoal(uint16_t index);
         bool isGoal(uint16_t index) const;
 
-        void mazeUpdate(Maze& maze, ToFSensor& tof, Heading heading);
+        void mazeUpdate(ToFSensor& tof, Heading heading);
         WallDir localToGlobal(WallSides side, Heading heading) const;
+
+        void updateCoordinates(Heading heading);
     private:
         Cell cells[MAZE_MAX_CELLS];
         uint16_t count = 0;
