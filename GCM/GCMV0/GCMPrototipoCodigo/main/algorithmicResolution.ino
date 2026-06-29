@@ -1,373 +1,302 @@
-#include "algorithmicResolution.h"
+#include "algorithmicResolution.hpp"
 
-AlgorithmicResolution solver;
-Maze maze;
-
-void AlgorithmicResolution::clearArrays() {
-    for(uint16_t i = 0; i < MAZE_MAX_CELLS; i++) {
-        _visited[i] = false;
-        _flood[i] = FLOOD_INF;
-        _parent[i] = INVALID_INDEX;
-        _parentHeading[i] = NORTH;
-    }
-
-    _dfsPathLen = 0;
-    _floodPathLen = 0;
+bool isGoalDetected() {
+    return digitalRead(IR_PIN) == LOW;
 }
 
-void AlgorithmicResolution::reset() {
-    clearArrays();
+Heading rotateLeft(Heading h) {
+    return (Heading)((h + 3) % 4);
 }
 
-WallDir AlgorithmicResolution::headingToWall(Heading h) {
-    return (WallDir)(1 << (uint8_t)h);
+Heading rotateRight(Heading h) {
+    return (Heading)((h + 1) % 4);
 }
 
-Heading AlgorithmicResolution::turnRight(Heading h) {
-    return (Heading)(((uint8_t)h + 1) % 4);
+Heading rotateBack(Heading h) {
+    return (Heading)((h + 2) % 4);
 }
 
-Heading AlgorithmicResolution::turnLeft(Heading h) {
-    return (Heading)(((uint8_t)h + 3) % 4);
-}
-
-Heading AlgorithmicResolution::turnBack(Heading h) {
-    return (Heading)(((uint8_t)h + 2) % 4);
-}
-
-void AlgorithmicResolution::stepFromHeading(Heading h, int16_t& dx, int16_t& dy) {
-    dx = 0;
-    dy = 0;
-
+WallDir headingToWall(Heading h) {
     switch(h) {
-        case NORTH: dy =  1; break;
-        case EAST:  dx =  1; break;
-        case SOUTH: dy = -1; break;
-        case WEST:  dx = -1; break;
+        case NORTH: return WALL_N;
+        case EAST:  return WALL_E;
+        case SOUTH: return WALL_S;
+        case WEST:  return WALL_W;
     }
+
+    return WALL_N;
 }
 
-int16_t AlgorithmicResolution::findCellByCoord(Maze& maze, int16_t x, int16_t y) const {
-    for(uint16_t i = 0; i < maze.cellCount(); i++) {
-        const Cell& c = maze.getCell(i);
-        if(c.x == x && c.y == y) {
-            return (int16_t)i;
-        }
-    }
+static DFSNode stackDFS[MAX_STACK];
+static int sp = -1;
 
-    return -1;
+static void push(uint16_t cell, Heading h) {
+
+    if(sp >= MAX_STACK - 1) return;
+
+    stackDFS[++sp] = {cell, h};
 }
 
-int16_t AlgorithmicResolution::neighborIndex(Maze& maze, uint16_t index, Heading h) const {
-    if(index >= maze.cellCount()) {
-        return -1;
-    }
-
-    const Cell& c = maze.getCell(index);
-
-    int16_t dx = 0;
-    int16_t dy = 0;
-    stepFromHeading(h, dx, dy);
-
-    return findCellByCoord(maze, c.x + dx, c.y + dy);
+static void pop() {
+    if(sp >= 0) sp--;
 }
 
-// -----------------------------------------------------------------------------
-// DFS
-// -----------------------------------------------------------------------------
+static bool canMove(Maze& maze, uint16_t current, Heading h) {
+    return !maze.isWall(current, headingToWall(h));
+}
 
-bool AlgorithmicResolution::dfsRecursive(Maze& maze, uint16_t current, uint16_t goal) {
-    if(current >= maze.cellCount()) {
-        return false;
+static bool isUnvisited(Maze& maze, uint16_t current, Heading h) {
+    if(!canMove(maze, current, h)) return false;
+
+    int16_t next = maze.adjacentCell(current, h);
+
+    if(next == -1) return true;
+
+    return !maze.getCell(next).visited;
+}
+
+TurnDecision chooseDFS(Maze& maze, uint16_t current, Heading heading) {
+    if(isGoalDetected()) {
+        maze.setGoal(current);
+
+        return NO_MOVE;
     }
 
-    _visited[current] = true;
+    maze.getCell(current).visited = true;
 
-    if(current == goal) {
-        return true;
-    }
-
-    // Exploration order: straight, right, left, back
-    const Heading currentHeading = _parentHeading[current];
-    const Heading candidates[4] = {
-        currentHeading,
-        turnRight(currentHeading),
-        turnLeft(currentHeading),
-        turnBack(currentHeading)
+    Heading options[4] = {
+        heading,
+        rotateLeft(heading),
+        rotateRight(heading),
+        rotateBack(heading)
     };
 
-    for(uint8_t i = 0; i < 4; i++) {
-        Heading nextHeading = candidates[i];
-        WallDir wall = headingToWall(nextHeading);
+    TurnDecision actions[4] = {
+        GO_FORWARD,
+        TURN_LEFT,
+        TURN_RIGHT,
+        TURN_BACK
+    };
 
-        if(maze.isWall(current, wall)) {
-            continue;
-        }
+    int chosen = -1;
 
-        int16_t nextIndex = neighborIndex(maze, current, nextHeading);
-        if(nextIndex < 0) {
-            continue;
-        }
-
-        if(_visited[(uint16_t)nextIndex]) {
-            continue;
-        }
-
-        _parent[(uint16_t)nextIndex] = current;
-        _parentHeading[(uint16_t)nextIndex] = nextHeading;
-
-        if(dfsRecursive(maze, (uint16_t)nextIndex, goal)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void AlgorithmicResolution::reconstructDFSPath(uint16_t startIndex, uint16_t goalIndex) {
-    _dfsPathLen = 0;
-
-    if(startIndex == goalIndex) {
-        return;
-    }
-
-    uint16_t cur = goalIndex;
-
-    while(cur != startIndex && cur != INVALID_INDEX && _dfsPathLen < MAZE_MAX_CELLS) {
-        uint16_t prev = _parent[cur];
-        if(prev == INVALID_INDEX) {
+    for(int i = 0; i < 4; i++) {
+        if(isUnvisited(maze, current, options[i])) {
+            chosen = i;
             break;
         }
-
-        _dfsPath[_dfsPathLen].from = prev;
-        _dfsPath[_dfsPathLen].to = cur;
-        _dfsPath[_dfsPathLen].heading = _parentHeading[cur];
-        _dfsPathLen++;
-
-        cur = prev;
     }
 
-    // Reverse so the path goes start -> goal
-    for(uint16_t i = 0; i < _dfsPathLen / 2; i++) {
-        PathStep tmp = _dfsPath[i];
-        _dfsPath[i] = _dfsPath[_dfsPathLen - 1 - i];
-        _dfsPath[_dfsPathLen - 1 - i] = tmp;
-    }
-}
+    if(chosen != -1) {
+        int branches = 0;
 
-bool AlgorithmicResolution::solveDFS(Maze& maze, uint16_t startIndex, uint16_t goalIndex) {
-    clearArrays();
-
-    if(startIndex >= maze.cellCount() || goalIndex >= maze.cellCount()) {
-        return false;
-    }
-
-    // DFS tree root
-    _parent[startIndex] = INVALID_INDEX;
-    _parentHeading[startIndex] = NORTH;
-
-    bool found = dfsRecursive(maze, startIndex, goalIndex);
-    if(found) {
-        reconstructDFSPath(startIndex, goalIndex);
-    }
-
-    return found;
-}
-
-void AlgorithmicResolution::printDFSPath(Stream& out) const {
-    out.println(F("DFS path:"));
-    for(uint16_t i = 0; i < _dfsPathLen; i++) {
-        out.print(F("  "));
-        out.print(_dfsPath[i].from);
-        out.print(F(" -> "));
-        out.print(_dfsPath[i].to);
-        out.print(F("  heading="));
-        out.println((uint8_t)_dfsPath[i].heading);
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Flood Fill
-// -----------------------------------------------------------------------------
-
-void AlgorithmicResolution::floodFill(Maze& maze, uint16_t goalIndex) {
-    for(uint16_t i = 0; i < MAZE_MAX_CELLS; i++) {
-        _flood[i] = FLOOD_INF;
-    }
-
-    if(goalIndex >= maze.cellCount()) {
-        return;
-    }
-
-    uint16_t queue[MAZE_MAX_CELLS];
-    uint16_t qHead = 0;
-    uint16_t qTail = 0;
-
-    _flood[goalIndex] = 0;
-    queue[qTail++] = goalIndex;
-
-    while(qHead < qTail) {
-        uint16_t current = queue[qHead++];
-        uint16_t base = _flood[current];
-
-        for(uint8_t i = 0; i < 4; i++) {
-            Heading h = (Heading)i;
-            WallDir wall = headingToWall(h);
-
-            if(maze.isWall(current, wall)) {
-                continue;
-            }
-
-            int16_t next = neighborIndex(maze, current, h);
-            if(next < 0) {
-                continue;
-            }
-
-            uint16_t nextIndex = (uint16_t)next;
-
-            if(_flood[nextIndex] > base + 1) {
-                _flood[nextIndex] = base + 1;
-
-                if(qTail < MAZE_MAX_CELLS) {
-                    queue[qTail++] = nextIndex;
-                }
-            }
-        }
-    }
-}
-
-void AlgorithmicResolution::reconstructFloodPath(Maze& maze, uint16_t startIndex, uint16_t goalIndex) {
-    _floodPathLen = 0;
-
-    if(startIndex >= maze.cellCount() || goalIndex >= maze.cellCount()) {
-        return;
-    }
-
-    if(_flood[startIndex] == FLOOD_INF) {
-        return;
-    }
-
-    uint16_t cur = startIndex;
-
-    while(cur != goalIndex && _floodPathLen < MAZE_MAX_CELLS) {
-        uint16_t bestNext = INVALID_INDEX;
-        Heading bestHeading = NORTH;
-        uint16_t bestValue = _flood[cur];
-
-        for(uint8_t i = 0; i < 4; i++) {
-            Heading h = (Heading)i;
-            WallDir wall = headingToWall(h);
-
-            if(maze.isWall(cur, wall)) {
-                continue;
-            }
-
-            int16_t next = neighborIndex(maze, cur, h);
-            if(next < 0) {
-                continue;
-            }
-
-            uint16_t nextIndex = (uint16_t)next;
-            if(_flood[nextIndex] < bestValue) {
-                bestValue = _flood[nextIndex];
-                bestNext = nextIndex;
-                bestHeading = h;
+        for(int i = 0; i < 4; i++) {
+            if(isUnvisited(maze, current, options[i])) {
+                branches++;
             }
         }
 
-        if(bestNext == INVALID_INDEX) {
-            break;
+        if(branches > 1) {
+            push(current, heading);
         }
 
-        _floodPath[_floodPathLen].from = cur;
-        _floodPath[_floodPathLen].to = bestNext;
-        _floodPath[_floodPathLen].heading = bestHeading;
-        _floodPathLen++;
+        return actions[chosen];
+    }
 
-        cur = bestNext;
+    if(sp >= 0) {
+        DFSNode node = stackDFS[sp];
+        pop();
+
+        return TURN_BACK;
+    }
+
+    return NO_MOVE;
+}
+
+static void resetFlood(Maze& maze) {
+    for(uint16_t i = 0; i < maze.cellCount(); i++) {
+        flood[i] = 65535;
     }
 }
 
-bool AlgorithmicResolution::solveFloodFill(Maze& maze, uint16_t startIndex, uint16_t goalIndex) {
-    if(startIndex >= maze.cellCount() || goalIndex >= maze.cellCount()) {
-        return false;
-    }
-
-    floodFill(maze, goalIndex);
-    reconstructFloodPath(maze, startIndex, goalIndex);
-
-    return (_floodPathLen > 0 || startIndex == goalIndex);
-}
-
-void AlgorithmicResolution::printFloodPath(Stream& out) const {
-    out.println(F("Flood fill path:"));
-    for(uint16_t i = 0; i < _floodPathLen; i++) {
-        out.print(F("  "));
-        out.print(_floodPath[i].from);
-        out.print(F(" -> "));
-        out.print(_floodPath[i].to);
-        out.print(F("  heading="));
-        out.println((uint8_t)_floodPath[i].heading);
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Example sketch entry points
-// -----------------------------------------------------------------------------
-
-static int16_t findGoalIndex(Maze& maze) {
+static int findGoal(Maze& maze) {
     for(uint16_t i = 0; i < maze.cellCount(); i++) {
         if(maze.isGoal(i)) {
-            return (int16_t)i;
+            return i;
         }
     }
+
     return -1;
 }
 
-void setup() {
-    Serial.begin(115200);
-    while(!Serial) {
-        delay(10);
-    }
+void computeFloodFill(Maze& maze) {
+    resetFlood(maze);
 
-    Serial.println(F("\nAlgorithmicResolution base loaded"));
+    int goal = findGoal(maze);
 
-    // Ensure there is at least one start cell.
-    if(maze.cellCount() == 0) {
-        int16_t idx = maze.addCell();
-        if(idx >= 0) {
-            maze.getCell((uint16_t)idx).x = 0;
-            maze.getCell((uint16_t)idx).y = 0;
+    if(goal == -1) return;
+
+    uint16_t queue[MAX_CELLS];
+
+    int head = 0;
+    int tail = 0;
+
+    queue[tail++] = goal;
+
+    flood[goal] = 0;
+
+    while(head < tail) {
+
+        uint16_t current = queue[head++];
+
+        Heading dirs[4] = {
+            NORTH,
+            EAST,
+            SOUTH,
+            WEST
+        };
+
+        for(int i = 0; i < 4; i++) {
+            Heading h = dirs[i];
+
+            if(!canMove(maze, current, h)) {
+                continue;
+            }
+
+            int16_t next = maze.adjacentCell(current, h);
+
+            if(next == -1) {
+                continue;
+            }
+
+            if(flood[next] > flood[current] + 1) {
+                flood[next] = flood[current] + 1;
+                queue[tail++] = next;
+            }
         }
     }
-
-    solver.reset();
-
-    Serial.println(F("Waiting for a mapped maze with a goal cell..."));
 }
 
-void loop() {
-    // This file is intentionally algorithmic-only.
-    // Once your exploration layer has filled the maze and set one goal cell,
-    // you can call:
+TurnDecision chooseFloodFill(Maze& maze, uint16_t current, Heading heading) {
+    Heading options[4] = {
+        heading,
+        rotateLeft(heading),
+        rotateRight(heading),
+        rotateBack(heading)
+    };
 
-    int16_t goalIndex = findGoalIndex(maze);
-    if(goalIndex >= 0 && maze.cellCount() > 0) {
-        uint16_t startIndex = 0;
+    TurnDecision actions[4] = {
+        GO_FORWARD,
+        TURN_LEFT,
+        TURN_RIGHT,
+        TURN_BACK
+    };
 
-        if(solver.solveDFS(maze, startIndex, (uint16_t)goalIndex)) {
-            solver.printDFSPath(Serial);
+    uint16_t best = 65535;
+
+    TurnDecision chosen = NO_MOVE;
+
+    for(int i = 0; i < 4; i++) {
+        if(!canMove(maze, current, options[i])) {
+            continue;
         }
 
-        if(solver.solveFloodFill(maze, startIndex, (uint16_t)goalIndex)) {
-            solver.printFloodPath(Serial);
+        int16_t next = maze.adjacentCell(current, options[i]);
+
+        if(next == -1) {
+            continue;
         }
 
-        // Prevent spamming Serial forever.
-        while(true) {
-            delay(1000);
+        if(flood[next] < best) {
+            best = flood[next];
+
+            chosen = actions[i];
         }
     }
 
-    delay(100);
+    return chosen;
+}
+
+void generateSpeedrunPath(Maze& maze) {
+    pathLength = 0;
+
+    int16_t current = 0;    
+
+    Heading heading = NORTH;
+
+    while(!maze.isGoal(current)) {
+        TurnDecision move = chooseFloodFill(maze, current, heading);
+
+        if(move == NO_MOVE) {
+            break;
+        }
+
+        speedrunPath[pathLength++] = move;
+
+        switch(move) {
+            case TURN_LEFT:
+                heading = rotateLeft(heading);
+                break;
+
+            case TURN_RIGHT:
+                heading = rotateRight(heading);
+                break;
+
+            case TURN_BACK:
+                heading = rotateBack(heading);
+                break;
+
+            default:
+                break;
+        }
+
+        current = maze.adjacentCell(current,heading);
+    }
+}
+
+void returnToStart(Heading& heading) {
+    stopMotors();
+
+    delay(1000);
+
+    turnBack();
+    delay(2 * TURN_DELAY);
+
+    stopMotors();
+
+    heading = rotateBack(heading);
+
+    for(int i = pathLength - 1; i >= 0; i--) {
+
+        switch(speedrunPath[i]) {
+
+            case GO_FORWARD:
+                executeMove(GO_FORWARD, heading);
+                break;
+
+            case TURN_LEFT:
+                executeMove(TURN_RIGHT, heading);
+                break;
+
+            case TURN_RIGHT:
+                executeMove(TURN_LEFT, heading);
+                break;
+
+            case TURN_BACK:
+                executeMove(TURN_BACK, heading);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    stopMotors();
+
+    turnBack();
+    delay(2 * TURN_DELAY);
+
+    stopMotors();
+
+    heading = rotateBack(heading);
 }

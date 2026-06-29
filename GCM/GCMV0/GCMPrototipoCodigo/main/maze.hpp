@@ -12,6 +12,7 @@ struct Cell {
     // existencia de las paredes en esa celda en el eje cardinal
 
     bool goal = false;
+    bool visited = false;
 
     int16_t x = 0;
     int16_t y = 0;
@@ -34,22 +35,20 @@ enum Heading : uint8_t {
 class Maze {
     public:
         int16_t addCell();
-
-        Cell& getCell(uint16_t index);
-
+        const Cell& getCell(uint16_t index) const;
         uint16_t cellCount() const;
+        int16_t cellAt(int16_t x, int16_t y) const;
+        int16_t adjacentCell(int16_t index, Heading heading) const;
 
         void setWall(uint16_t index, WallDir dir);
-        bool isThereWall(uint16_t index, WallDir dir) const;
+        bool isWall(uint16_t index, WallDir dir) const;
 
         void setGoal(uint16_t index);
         bool isGoal(uint16_t index) const;
 
         void mazeUpdate(ToFSensor& tof, Heading heading);
         WallDir localToGlobal(WallSides side, Heading heading) const;
-
-        void updateCoordinates(Heading heading);
     private:
-        Cell cells[MAZE_MAX_CELLS];
+        Cell cells[MAZE_MAX_CELLS]{};
         uint16_t count = 0;
 };

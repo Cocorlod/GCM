@@ -1,15 +1,3 @@
-/*
-Setupeo de los sensores ToF VL53L1X en GCM V0:
-
--Se inicializan los sensores
--Se leen los valores y se almacenan en una variable
--Verificacion de que los sensores esten en funcionamiento
--Tres funciones que determinan la existencia de paredes en el frente, a la izquierda o derecha
--Tres funciones que determinan la distancia a cada una de las paredes (promedio entre dos sensores en cada direccion)
--Error en izquierda y derecha
--Distancia especifica de un sensor
-*/
-
 #include "ToF_Setup.hpp"
 
 const uint8_t ToFSensor::XSHUTPIN[SENSOR_COUNT] = {
@@ -56,10 +44,10 @@ void ToFSensor::update() {
     for(uint8_t i = 0; i < SENSOR_COUNT; i++) {
         if(!ok[i]) continue;
         if(sensor[i].dataReady()) {
-            if(!sensor[i].timeOutOccurred()) {
+            if(!sensor[i].timeoutOccurred()) {
                 distance[i] = sensor[i].read(false);
-                sensor[i].clearInterrupt();
             }
+            sensor[i].clearInterrupt();
         }
     }
 }
@@ -85,9 +73,9 @@ bool ToFSensor::isThereWall(WallSides side) const {
 }
 
 bool ToFSensor::isCentered() const {
-    bool frontCentered = abs(wallDistance(FRONT) - FRONT_WALL_THRESHOLD_CENTER) <= 2;
-    bool leftCentered = abs(wallDistance(LEFT) - SIDE_WALL_THRESHOLD_CENTER) <= 2;
-    bool rightCentered = abs(wallDistance(RIGHT) - SIDE_WALL_THRESHOLD_CENTER) <= 2;
+    bool frontCentered = abs(wallDistance(FRONT) - FRONT_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
+    bool leftCentered = abs(wallDistance(LEFT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
+    bool rightCentered = abs(wallDistance(RIGHT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
 
     if (isThereWall(FRONT)) {
         return frontCentered && ((leftCentered && isThereWall(LEFT)) || (rightCentered && isThereWall(RIGHT)));
@@ -104,8 +92,8 @@ bool ToFSensor::isCentered() const {
     if(isThereWall(RIGHT)) {
         return rightCentered;
     }
-    /*Evaluar por dead reckoning*/
-    return false;
+    
+    return true;
 }
 
 float ToFSensor::wallDistance(WallSides side) const {
@@ -135,9 +123,9 @@ int16_t ToFSensor::alignmentError(WallSides side) const {
 
     switch(side) {
         case LEFT:
-            return (uint16_t)distance[LEFT_F] - (uint16_t)distance[LEFT_B];
+            return (int16_t)distance[LEFT_F] - (int16_t)distance[LEFT_B];
         case RIGHT:
-            return (uint16_t)distance[RIGHT_F] - (uint16_t)distance[RIGHT_B];
+            return (int16_t)distance[RIGHT_F] - (int16_t)distance[RIGHT_B];
         default:
             return 0;
     }  

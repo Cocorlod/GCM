@@ -25,6 +25,7 @@ XSHUT6-> LF 5
 #define PIN_XSHUT5 36
 #define PIN_XSHUT6 7
 #define SENSOR_COUNT 6
+#define OFFSET_CENTER 10
 
 static constexpr int16_t MAX_ALLOWED_DIFF = 90;
 static constexpr int16_t FRONT_WALL_THRESHOLD = 250;
@@ -57,7 +58,9 @@ class ToFSensor {
         void update();
     
         bool allSensorsOk() const;
+
         bool isThereWall(WallSides side) const;
+        bool isCentered() const;
 
         float wallDistance(WallSides side) const; 
         
