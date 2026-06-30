@@ -1,22 +1,45 @@
 #include "FSM.hpp"
 
-ToFSensor tof;
 Heading heading = NORTH;
 
-void RobotFSM::setup() {
+void RobotFSM::config() {
     maze.addCell();
 
-    state = EXPLORATION;
+    state = WAITING;
 }
 
 void RobotFSM::update() {
     switch (state) {
         case WAITING:
             stopMotors();
+
+            if(digitalRead(START_BUTTON_PIN) == LOW) {
+                delay(200);
+                heading = NORTH;
+                if(pathSaved) {
+                    loadPath();
+                    state = SPEEDRUN;
+                } else {
+                    state = EXPLORATION;
+                }
+            }
+            
+            if(digitalRead(CLEAR_BUTTON_PIN) == LOW){
+                if(clearButtonPressedTime == 0) {
+                    clearButtonPressedTime = millis();
+                }
+                if(millis() - clearButtonPressedTime >= 2000) {
+                    clearPath();
+                    clearButtonPressedTime = 0;
+                    state = WAITING;
+                }
+                
+            } else {
+                clearButtonPressedTime = 0;
+            }
+
             break;
-        case LOAD_MAZE:
-            state = EXPLORATION;  
-            break;
+
         case EXPLORATION:
             tof.update();
 
@@ -41,7 +64,9 @@ void RobotFSM::update() {
                 if(move == NO_MOVE) {
                     stopMotors();
                     computeFloodFill(maze);
-                    generateSpeedRunPath(maze);
+                    generateSpeedrunPath(maze);
+                    savePath();
+                    state = RETURN;
 
                     break;
                 }
@@ -49,23 +74,34 @@ void RobotFSM::update() {
                 executeMove(move, heading);
             } 
             else {
-                moveForward();
+                moveForward(tof);
             }
             
             break;
 
         case RETURN:
             returnToStart(heading);
+            if(finishedReturnToStart) {
+                finishedReturnToStart = false;
+                state = WAITING;
+            }
+            
             break;
+
         case SPEEDRUN:
-            generateSpeedrunPath(maze);
             for(int i = 0; i < pathLength; i++) {
                 executeMove(speedrunPath[i], heading);
             }
-            state = RETURN;
-            break;
-        case ERROR_STATE:
             stopMotors();
+            state = FINISHED;
+            break;
+
+        case FINISHED:
+            stopMotors();
+            if(digitalRead(START_BUTTON_PIN) == LOW) {
+                delay(200);
+                state = RETURN;
+            }
             break;
     }
 }

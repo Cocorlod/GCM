@@ -18,13 +18,20 @@ Board: ESP32 S3 1N16R8
 
 */
 
-#include "FSM.hpp"
-
-RobotFSM robot;
+#include "main.hpp"
 
 void setup() {
-    Serial.begin(115200);
-    robot.setup();
+    Serial.begin(SERIAL_SPEED);
+
+    pinMode(START_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(CLEAR_BUTTON_PIN, INPUT_PULLUP);
+
+    pinMode(LED_DEBUG_LASER, OUTPUT);
+    pinMode(LED_TEST, OUTPUT);
+    pinMode(LED_MOUNTED, OUTPUT);
+    pinMode(LED_MODE, OUTPUT);
+
+    robot.config();
 }
 
 void loop() {

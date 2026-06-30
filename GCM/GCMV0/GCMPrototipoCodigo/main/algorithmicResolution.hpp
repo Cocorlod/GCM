@@ -12,6 +12,8 @@ Maze maze;
 static uint16_t flood[MAZE_MAX_CELLS];
 
 bool isGoalDetected();
+bool pathSaved = false;
+bool finishedReturnToStart = false;
 
 enum TurnDecision {
     GO_FORWARD,
@@ -28,3 +30,6 @@ struct DFSNode {
 
 TurnDecision chooseDFS(Maze& maze, uint16_t current, Heading heading);
 void generateSpeedrunPath(Maze& maze);
+
+void savePath();
+void loadPath();

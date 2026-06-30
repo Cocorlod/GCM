@@ -1,12 +1,12 @@
 #pragma once
 
-#define OPEN_INTERSECTION_DELAY 100
-
 #include <Arduino.h>
 #include "maze.hpp"
 #include "movement.hpp"
 #include "algorithmicResolution.hpp"
 #include "ToF_Setup.hpp"
+
+static unsigned long clearButtonPressedTime = 0;
 
 enum RobotState {
     WAITING,
@@ -21,7 +21,7 @@ enum RobotState {
 
 class RobotFSM {
 public:
-    void setup();
+    void config();
 
     void update();
 private:

@@ -1,4 +1,7 @@
 #include "algorithmicResolution.hpp"
+#include <Preferences.h>
+
+static Preferences prefs;
 
 bool isGoalDetected() {
     return digitalRead(IR_PIN) == LOW;
@@ -136,7 +139,7 @@ void computeFloodFill(Maze& maze) {
 
     if(goal == -1) return;
 
-    uint16_t queue[MAX_CELLS];
+    uint16_t queue[MAX_STACK];
 
     int head = 0;
     int tail = 0;
@@ -267,7 +270,6 @@ void returnToStart(Heading& heading) {
     heading = rotateBack(heading);
 
     for(int i = pathLength - 1; i >= 0; i--) {
-
         switch(speedrunPath[i]) {
 
             case GO_FORWARD:
@@ -299,4 +301,36 @@ void returnToStart(Heading& heading) {
     stopMotors();
 
     heading = rotateBack(heading);
+
+    finishedReturnToStart = true;
+}
+
+void savePath() {
+    prefs.begin("micromouse", false);
+
+    prefs.putUInt("length", pathLength);
+
+    prefs.putBytes("path", speedRunPath, pathLength * sizeof(TurnDecision));
+    prefs.end();
+
+    pathSaved = true;
+}
+
+void loadPath() {
+    prefs.begin("micromouse", true);
+
+    pathLength = prefs.getUInt("length", 0);
+
+    prefs.getBytes("path", speedrunPath, pathLength * sizeof(TurnDecision));
+
+    prefs.end();
+
+    pathSaved = (pathLength > 0)
+}
+
+void clearPath() {
+    prefs.begin("micromouse", false);
+    prefs.clear();
+    prefs.end();
+    pathSaved = false;
 }

@@ -47,7 +47,6 @@ void ToFSensor::update() {
             if(!sensor[i].timeoutOccurred()) {
                 distance[i] = sensor[i].read(false);
             }
-            sensor[i].clearInterrupt();
         }
     }
 }

@@ -9,6 +9,20 @@
 #define PIN_PWMB 10
 
 #define TURN_PWM 50
-#define FORWARD_PWM 100
+#define FORWARD_PWM 80
 
 #define TURN_DELAY 90
+
+static float previousError = 0.0f;
+static uint32_t previousTime = 0;
+
+constexpr float KP = 1.2f;
+constexpr float KD = 0.08f;
+
+ToFSensor tof;
+
+void moveForward(ToFSensor& tof);
+void turnLeft();
+void turnRight();
+void turnBack();
+void stopMotors();
