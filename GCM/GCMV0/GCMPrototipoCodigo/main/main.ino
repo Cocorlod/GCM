@@ -14,7 +14,7 @@ Clear: GPIO48, erases memory so that the robot can explore a new maze
 
 The robot must keep the maze after its turned off and only erases the memory when clear is pressed
 
-Board: ESP32 S3 1N16R8
+Board: ESP32 3 1N16R8
 
 */
 

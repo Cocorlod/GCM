@@ -10,20 +10,19 @@ static unsigned long clearButtonPressedTime = 0;
 
 enum RobotState {
     WAITING,
-    LOAD_MAZE,
     EXPLORATION,
     RETURN,
     SPEEDRUN,
-    ERASE_MEMORY,
-    FINISHED,
-    ERROR_STATE
+    FINISHED
 };
 
 class RobotFSM {
-public:
-    void config();
+    public:
+        void config();
 
-    void update();
-private:
-    RobotState state = WAITING;
+        void update();
+    private:
+        RobotState state = WAITING;
+
+        ToFSensor tof;
 };

@@ -2,6 +2,14 @@
 #include "algorithmicResolution.hpp"
 #include "ToF_Setup.hpp"
 
+float previousError = 0.0f;
+uint32_t previousTime = 0;
+
+const float KP = 1.2f;
+const float KD = 0.08f;
+
+ToFSensor tof;
+
 void moveForward(ToFSensor& tof) {
     float error = 0.0f;
 

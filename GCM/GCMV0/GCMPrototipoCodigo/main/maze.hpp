@@ -35,6 +35,7 @@ enum Heading : uint8_t {
 class Maze {
     public:
         int16_t addCell();
+        Cell& getCell(uint16_t index);
         const Cell& getCell(uint16_t index) const;
         uint16_t cellCount() const;
         int16_t cellAt(int16_t x, int16_t y) const;

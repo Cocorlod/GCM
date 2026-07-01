@@ -13,13 +13,11 @@
 
 #define TURN_DELAY 90
 
-static float previousError = 0.0f;
-static uint32_t previousTime = 0;
+extern float previousError;
+extern uint32_t previousTime;
 
-constexpr float KP = 1.2f;
-constexpr float KD = 0.08f;
-
-ToFSensor tof;
+extern const float KP;
+extern const float KD;
 
 void moveForward(ToFSensor& tof);
 void turnLeft();

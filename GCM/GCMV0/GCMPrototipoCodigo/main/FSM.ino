@@ -10,7 +10,7 @@ void RobotFSM::config() {
 
 void RobotFSM::update() {
     switch (state) {
-        case WAITING:
+        case WAITING: {
             stopMotors();
 
             if(digitalRead(START_BUTTON_PIN) == LOW) {
@@ -39,8 +39,9 @@ void RobotFSM::update() {
             }
 
             break;
+        }
 
-        case EXPLORATION:
+        case EXPLORATION: {
             tof.update();
 
             bool front = tof.isThereWall(FRONT);
@@ -78,8 +79,9 @@ void RobotFSM::update() {
             }
             
             break;
+        }
 
-        case RETURN:
+        case RETURN: {
             returnToStart(heading);
             if(finishedReturnToStart) {
                 finishedReturnToStart = false;
@@ -87,13 +89,15 @@ void RobotFSM::update() {
             }
             
             break;
+        }
 
-        case SPEEDRUN:
+        case SPEEDRUN: {
             for(int i = 0; i < pathLength; i++) {
                 executeMove(speedrunPath[i], heading);
             }
             stopMotors();
             state = FINISHED;
+
             break;
 
         case FINISHED:
@@ -102,6 +106,8 @@ void RobotFSM::update() {
                 delay(200);
                 state = RETURN;
             }
+
             break;
+        }
     }
 }

@@ -1,7 +1,12 @@
 #include "algorithmicResolution.hpp"
-#include <Preferences.h>
 
-static Preferences prefs;
+uint16_t pathLength = 0;
+
+TurnDecision speedrunPath[MAX_STACK];
+
+bool pathSaved = false;
+
+bool finishedReturnToStart = false;
 
 bool isGoalDetected() {
     return digitalRead(IR_PIN) == LOW;
@@ -325,7 +330,7 @@ void loadPath() {
 
     prefs.end();
 
-    pathSaved = (pathLength > 0)
+    pathSaved = (pathLength > 0);
 }
 
 void clearPath() {
