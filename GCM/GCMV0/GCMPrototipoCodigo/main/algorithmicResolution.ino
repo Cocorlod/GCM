@@ -1,15 +1,29 @@
-#include "algorithmicResolution.hpp"
+#include "FSM.hpp"
 
 uint16_t pathLength = 0;
 
-TurnDecision speedrunPath[MAX_STACK];
+TurnDecision speedrunPath[MAZE_MAX_CELLS];
+
+Maze maze;
 
 bool pathSaved = false;
 
-bool finishedReturnToStart = false;
+bool goalFound = false;
+
+static constexpr uint8_t CELL_BOUNDARY_STABLE_SAMPLES = 4;
+static constexpr unsigned long CELL_BOUNDARY_MIN_INTERVAL_MS = 150;
 
 bool isGoalDetected() {
-    return digitalRead(IR_PIN) == LOW;
+    static uint8_t consecutiveHits = 0;
+    static constexpr uint8_t REQUIRED_CONSECUTIVE = 4;
+
+    if(analogRead(IR_PIN) >= IR_THRESHOLD) {
+        if(consecutiveHits < 255) consecutiveHits++;
+    } else {
+        consecutiveHits = 0;
+    }
+
+    return consecutiveHits >= REQUIRED_CONSECUTIVE;
 }
 
 Heading rotateLeft(Heading h) {
@@ -35,18 +49,32 @@ WallDir headingToWall(Heading h) {
     return WALL_N;
 }
 
-static DFSNode stackDFS[MAX_STACK];
-static int sp = -1;
-
-static void push(uint16_t cell, Heading h) {
-
-    if(sp >= MAX_STACK - 1) return;
-
-    stackDFS[++sp] = {cell, h};
+void CellBoundaryDetector::reset() {
+    stableCount = 0;
+    lastEventTime = millis();
 }
 
-static void pop() {
-    if(sp >= 0) sp--;
+bool CellBoundaryDetector::check(bool rawCondition) {
+    unsigned long now = millis();
+
+    if(now - lastEventTime < CELL_BOUNDARY_MIN_INTERVAL_MS) {
+        stableCount = 0;
+        return false;
+    }
+
+    if(rawCondition) {
+        if(stableCount < 255) stableCount++;
+    } else {
+        stableCount = 0;
+    }
+
+    if(stableCount >= CELL_BOUNDARY_STABLE_SAMPLES) {
+        stableCount = 0;
+        lastEventTime = now;
+        return true;
+    }
+
+    return false;
 }
 
 static bool canMove(Maze& maze, uint16_t current, Heading h) {
@@ -63,14 +91,40 @@ static bool isUnvisited(Maze& maze, uint16_t current, Heading h) {
     return !maze.getCell(next).visited;
 }
 
+static TurnDecision turnToFace(Heading current, Heading target) {
+    if(target == current) return GO_FORWARD;
+    if(target == rotateLeft(current)) return TURN_LEFT;
+    if(target == rotateRight(current)) return TURN_RIGHT;
+    return TURN_BACK;
+}
+
+struct PathNode {
+    uint16_t cell;
+    Heading enteredHeading;
+};
+
+static PathNode pathStack[MAZE_MAX_CELLS];
+static int16_t pathTop = -1;
+
+void resetDFS() {
+    pathTop = -1;
+}
+
 TurnDecision chooseDFS(Maze& maze, uint16_t current, Heading heading) {
     if(isGoalDetected()) {
         maze.setGoal(current);
-
+        goalFound = true;
+        debugPrint("GOAL DETECTED");
         return NO_MOVE;
     }
 
     maze.getCell(current).visited = true;
+
+    if(pathTop < 0 || pathStack[pathTop].cell != current) {
+        if(pathTop < (int16_t)MAZE_MAX_CELLS - 1) {
+            pathStack[++pathTop] = PathNode{current, heading};
+        }
+    }
 
     Heading options[4] = {
         heading,
@@ -86,36 +140,18 @@ TurnDecision chooseDFS(Maze& maze, uint16_t current, Heading heading) {
         TURN_BACK
     };
 
-    int chosen = -1;
-
     for(int i = 0; i < 4; i++) {
         if(isUnvisited(maze, current, options[i])) {
-            chosen = i;
-            break;
+            return actions[i];
         }
     }
 
-    if(chosen != -1) {
-        int branches = 0;
+    if(pathTop > 0) {
+        Heading enteredHeading = pathStack[pathTop].enteredHeading;
+        pathTop--;
 
-        for(int i = 0; i < 4; i++) {
-            if(isUnvisited(maze, current, options[i])) {
-                branches++;
-            }
-        }
-
-        if(branches > 1) {
-            push(current, heading);
-        }
-
-        return actions[chosen];
-    }
-
-    if(sp >= 0) {
-        DFSNode node = stackDFS[sp];
-        pop();
-
-        return TURN_BACK;
+        Heading target = rotateBack(enteredHeading);
+        return turnToFace(heading, target);
     }
 
     return NO_MOVE;
@@ -129,9 +165,7 @@ static void resetFlood(Maze& maze) {
 
 static int findGoal(Maze& maze) {
     for(uint16_t i = 0; i < maze.cellCount(); i++) {
-        if(maze.isGoal(i)) {
-            return i;
-        }
+        if(maze.isGoal(i)) return i;
     }
 
     return -1;
@@ -144,12 +178,12 @@ void computeFloodFill(Maze& maze) {
 
     if(goal == -1) return;
 
-    uint16_t queue[MAX_STACK];
+    static uint16_t queue[MAZE_MAX_CELLS];
 
     int head = 0;
     int tail = 0;
 
-    queue[tail++] = goal;
+    if(tail < MAZE_MAX_CELLS) queue[tail++] = goal;
 
     flood[goal] = 0;
 
@@ -179,7 +213,9 @@ void computeFloodFill(Maze& maze) {
 
             if(flood[next] > flood[current] + 1) {
                 flood[next] = flood[current] + 1;
-                queue[tail++] = next;
+                if(tail < (int)MAZE_MAX_CELLS) {
+                    queue[tail++] = next;
+                }
             }
         }
     }
@@ -205,15 +241,11 @@ TurnDecision chooseFloodFill(Maze& maze, uint16_t current, Heading heading) {
     TurnDecision chosen = NO_MOVE;
 
     for(int i = 0; i < 4; i++) {
-        if(!canMove(maze, current, options[i])) {
-            continue;
-        }
-
+        if(!canMove(maze, current, options[i])) continue;
+        
         int16_t next = maze.adjacentCell(current, options[i]);
 
-        if(next == -1) {
-            continue;
-        }
+        if(next == -1) continue;
 
         if(flood[next] < best) {
             best = flood[next];
@@ -239,7 +271,7 @@ void generateSpeedrunPath(Maze& maze) {
             break;
         }
 
-        speedrunPath[pathLength++] = move;
+        if(pathLength < MAZE_MAX_CELLS) speedrunPath[pathLength++] = move;
 
         switch(move) {
             case TURN_LEFT:
@@ -258,56 +290,91 @@ void generateSpeedrunPath(Maze& maze) {
                 break;
         }
 
-        current = maze.adjacentCell(current,heading);
+        current = maze.adjacentCell(current, heading);
+        if(current == -1) break; // defensive: shouldn't happen on a consistent maze
     }
 }
 
-void returnToStart(Heading& heading) {
-    stopMotors();
+static TurnDecision mirrorTurn(TurnDecision d) {
+    switch(d) {
+        case TURN_LEFT:  return TURN_RIGHT;
+        case TURN_RIGHT: return TURN_LEFT;
+        default:         return d;
+    }
+}
 
-    delay(1000);
+enum class ReturnPhase : uint8_t {
+    INITIAL_TURN,
+    TRAVERSE_KICKOFF,
+    TRAVERSE_DRIVE,
+    FINAL_TURN,
+    DONE
+};
 
-    turnBack();
-    delay(2 * TURN_DELAY);
+static ReturnPhase returnPhase = ReturnPhase::INITIAL_TURN;
+static int16_t returnIndex = -1;
 
-    stopMotors();
+void resetReturnToStart() {
+    returnPhase = ReturnPhase::INITIAL_TURN;
+    returnIndex = -1;
+}
 
-    heading = rotateBack(heading);
+bool returnToStartStep(Heading& heading, CellBoundaryDetector& boundary) {
+    switch(returnPhase) {
+        case ReturnPhase::INITIAL_TURN: {
+            stopMotors();
+            turnBack();
+            delay(2 * TURN_DELAY);
+            stopMotors();
+            heading = rotateBack(heading);
 
-    for(int i = pathLength - 1; i >= 0; i--) {
-        switch(speedrunPath[i]) {
+            returnIndex = (int16_t)pathLength - 1;
+            boundary.reset();
+            returnPhase = (returnIndex >= 0) ? ReturnPhase::TRAVERSE_KICKOFF : ReturnPhase::FINAL_TURN;
+            return false;
+        }
 
-            case GO_FORWARD:
-                executeMove(GO_FORWARD, heading);
-                break;
+        case ReturnPhase::TRAVERSE_KICKOFF: {
+            executeMove(mirrorTurn(speedrunPath[returnIndex]), heading);
+            boundary.reset();
+            returnPhase = ReturnPhase::TRAVERSE_DRIVE;
+            return false;
+        }
 
-            case TURN_LEFT:
-                executeMove(TURN_RIGHT, heading);
-                break;
+        case ReturnPhase::TRAVERSE_DRIVE: {
+            moveForward(tof);
 
-            case TURN_RIGHT:
-                executeMove(TURN_LEFT, heading);
-                break;
+            bool front = tof.isThereWall(FRONT);
+            bool left = tof.isThereWall(LEFT);
+            bool right = tof.isThereWall(RIGHT);
+            bool centered = tof.isCentered();
+            bool rawDecision = centered && (front || (!left || !right));
 
-            case TURN_BACK:
-                executeMove(TURN_BACK, heading);
-                break;
+            if(boundary.check(rawDecision)) {
+                returnIndex--;
+                returnPhase = (returnIndex >= 0) ? ReturnPhase::TRAVERSE_KICKOFF : ReturnPhase::FINAL_TURN;
+            }
 
-            default:
-                break;
+            return false;
+        }
+
+        case ReturnPhase::FINAL_TURN: {
+            stopMotors();
+            turnBack();
+            delay(2 * TURN_DELAY);
+            stopMotors();
+            heading = rotateBack(heading);
+            returnPhase = ReturnPhase::DONE;
+            return false;
+        }
+
+        case ReturnPhase::DONE: {
+            returnPhase = ReturnPhase::INITIAL_TURN;
+            return true;
         }
     }
 
-    stopMotors();
-
-    turnBack();
-    delay(2 * TURN_DELAY);
-
-    stopMotors();
-
-    heading = rotateBack(heading);
-
-    finishedReturnToStart = true;
+    return true;
 }
 
 void savePath() {
@@ -315,21 +382,25 @@ void savePath() {
 
     prefs.putUInt("length", pathLength);
 
-    prefs.putBytes("path", speedRunPath, pathLength * sizeof(TurnDecision));
-    prefs.end();
+    prefs.putBytes("path", speedrunPath, pathLength * sizeof(TurnDecision)); 
 
-    pathSaved = true;
+    prefs.end();
 }
 
 void loadPath() {
     prefs.begin("micromouse", true);
 
-    pathLength = prefs.getUInt("length", 0);
+    uint32_t storedLength = prefs.getUInt("length", 0);
 
-    prefs.getBytes("path", speedrunPath, pathLength * sizeof(TurnDecision));
+    if(storedLength > MAZE_MAX_CELLS) {
+        storedLength = MAZE_MAX_CELLS;
+    }
+
+    size_t bytesRead = prefs.getBytes("path", speedrunPath, storedLength * sizeof(TurnDecision));
 
     prefs.end();
 
+    pathLength = (uint16_t)(bytesRead / sizeof(TurnDecision));
     pathSaved = (pathLength > 0);
 }
 
@@ -338,4 +409,6 @@ void clearPath() {
     prefs.clear();
     prefs.end();
     pathSaved = false;
+    pathLength = 0;
+    resetDFS();
 }

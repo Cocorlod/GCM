@@ -5,19 +5,20 @@
 #include <Preferences.h>
 #include "maze.hpp"
 
-#define MAX_STACK 256
 #define IR_PIN 15
+#define IR_THRESHOLD 2500
 
-static uint16_t flood[MAX_STACK];
+static uint16_t flood[MAZE_MAX_CELLS];
 static Preferences prefs;
 
 bool isGoalDetected();
 
 extern bool pathSaved;  
-extern bool finishedReturnToStart;
 extern uint16_t pathLength;
 
-enum TurnDecision {
+extern bool goalFound;
+
+enum TurnDecision : uint8_t {
     GO_FORWARD,
     TURN_LEFT,
     TURN_RIGHT,
@@ -25,18 +26,33 @@ enum TurnDecision {
     NO_MOVE
 };
 
-extern TurnDecision speedrunPath[MAX_STACK];
+extern TurnDecision speedrunPath[MAZE_MAX_CELLS];
 
-struct DFSNode {
-    uint16_t cell;
-    Heading heading;
+extern Maze maze;
+
+Heading rotateLeft(Heading h);
+Heading rotateRight(Heading h);
+Heading rotateBack(Heading h);
+WallDir headingToWall(Heading h);
+
+struct CellBoundaryDetector {
+    uint8_t stableCount = 0;
+    unsigned long lastEventTime = 0;
+
+    void reset();
+    bool check(bool rawCondition);
 };
 
-Maze maze;
+void resetDFS();
 
-TurnDecision speedRunPath[MAZE_MAX_CELLS];
 TurnDecision chooseDFS(Maze& maze, uint16_t current, Heading heading);
+
+void computeFloodFill(Maze& maze);
 void generateSpeedrunPath(Maze& maze);
+
+void resetReturnToStart();
+bool returnToStartStep(Heading& heading, CellBoundaryDetector& boundary);
 
 void savePath();
 void loadPath();
+void clearPath();

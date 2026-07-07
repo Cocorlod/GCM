@@ -34,6 +34,8 @@ enum Heading : uint8_t {
 
 class Maze {
     public:
+        void reset();
+
         int16_t addCell();
         Cell& getCell(uint16_t index);
         const Cell& getCell(uint16_t index) const;
@@ -47,7 +49,10 @@ class Maze {
         void setGoal(uint16_t index);
         bool isGoal(uint16_t index) const;
 
-        void mazeUpdate(ToFSensor& tof, Heading heading);
+        int16_t visitCell(int16_t fromIndex, Heading heading);
+
+        void recordWalls(ToFSensor& tof, uint16_t index, Heading heading);
+
         WallDir localToGlobal(WallSides side, Heading heading) const;
     private:
         Cell cells[MAZE_MAX_CELLS]{};

@@ -25,6 +25,7 @@ bool ToFSensor::beginToF() {
 
         sensor[i].setTimeout(500);
         if(!sensor[i].init()) {
+            digitalWrite(XSHUTPIN[i], LOW);
             ok[i] = false;
             allOk = false;
             continue;
@@ -37,6 +38,9 @@ bool ToFSensor::beginToF() {
         sensor[i].startContinuous(20);
         ok[i] = true;
     }
+    if(allOk) Serial.println("All ToF sensors initialized successfully.");
+    else Serial.println("ToF Failed");
+
     return allOk;
 }
 
@@ -46,6 +50,8 @@ void ToFSensor::update() {
         if(sensor[i].dataReady()) {
             if(!sensor[i].timeoutOccurred()) {
                 distance[i] = sensor[i].read(false);
+            } else {            
+                ok[i] = false;
             }
         }
     }
@@ -56,6 +62,10 @@ bool ToFSensor::allSensorsOk() const {
         if(!ok[i]) return false;
     }
     return true;
+}
+
+bool ToFSensor::sensorOk(SensorID id) const {
+    return ok[id];
 }
 
 bool ToFSensor::isThereWall(WallSides side) const {
@@ -73,8 +83,8 @@ bool ToFSensor::isThereWall(WallSides side) const {
 
 bool ToFSensor::isCentered() const {
     bool frontCentered = abs(wallDistance(FRONT) - FRONT_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
-    bool leftCentered = abs(wallDistance(LEFT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
-    bool rightCentered = abs(wallDistance(RIGHT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
+    bool leftCentered = isThereWall(LEFT) && abs(wallDistance(LEFT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
+    bool rightCentered = isThereWall(RIGHT) && abs(wallDistance(RIGHT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
 
     if (isThereWall(FRONT)) {
         return frontCentered && ((leftCentered && isThereWall(LEFT)) || (rightCentered && isThereWall(RIGHT)));
@@ -97,21 +107,39 @@ bool ToFSensor::isCentered() const {
 
 float ToFSensor::wallDistance(WallSides side) const {
     switch(side) {
-        case FRONT:
+        case FRONT: {
+            bool lOk = ok[FRONT_L];
+            bool rOk = ok[FRONT_R];
+            if(!lOk && !rOk) return SENSOR_INVALID_DISTANCE;
+            if(!lOk) return distance[FRONT_R];
+            if(!rOk) return distance[FRONT_L];
             if(abs((int)distance[FRONT_L] - (int)distance[FRONT_R]) < MAX_ALLOWED_DIFF) {
                 return (distance[FRONT_L] + distance[FRONT_R])/2.0f;
             } 
             return min(distance[FRONT_L], distance[FRONT_R]);
-        case LEFT:
+        }
+        case LEFT: {
+            bool fOk = ok[LEFT_F];
+            bool bOk = ok[LEFT_B];
+            if(!fOk && !bOk) return SENSOR_INVALID_DISTANCE;
+            if(!fOk) return distance[LEFT_B];
+            if(!bOk) return distance[LEFT_F];
             if(abs((int)distance[LEFT_F] - (int)distance[LEFT_B]) < MAX_ALLOWED_DIFF) {
                 return (distance[LEFT_F] + distance[LEFT_B])/2.0f;
             }
             return min(distance[LEFT_F], distance[LEFT_B]);
-        case RIGHT:
+        }
+        case RIGHT: {
+            bool fOk = ok[RIGHT_F];
+            bool bOk = ok[RIGHT_B];
+            if(!fOk && !bOk) return SENSOR_INVALID_DISTANCE;
+            if(!fOk) return distance[RIGHT_B];
+            if(!bOk) return distance[RIGHT_F];
             if(abs((int)distance[RIGHT_F] - (int)distance[RIGHT_B]) < MAX_ALLOWED_DIFF) {
                 return (distance[RIGHT_F] + distance[RIGHT_B])/2.0f;
             }
             return min(distance[RIGHT_F], distance[RIGHT_B]);
+        }
         default:
             return 0.0f;
     }
@@ -122,8 +150,10 @@ int16_t ToFSensor::alignmentError(WallSides side) const {
 
     switch(side) {
         case LEFT:
+            if(!ok[LEFT_F] || !ok[LEFT_B]) return 0;
             return (int16_t)distance[LEFT_F] - (int16_t)distance[LEFT_B];
         case RIGHT:
+            if(!ok[RIGHT_F] || !ok[RIGHT_B]) return 0;
             return (int16_t)distance[RIGHT_F] - (int16_t)distance[RIGHT_B];
         default:
             return 0;

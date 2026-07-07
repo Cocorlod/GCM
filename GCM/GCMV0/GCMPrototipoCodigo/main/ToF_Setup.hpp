@@ -33,6 +33,8 @@ static constexpr int16_t SIDE_WALL_THRESHOLD = 250;
 static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
 static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
 
+static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
+
 enum SensorID : uint8_t {
 
     FRONT_R = 0,
@@ -58,6 +60,7 @@ class ToFSensor {
         void update();
     
         bool allSensorsOk() const;
+        bool sensorOk(SensorID id) const;
 
         bool isThereWall(WallSides side) const;
         bool isCentered() const;
