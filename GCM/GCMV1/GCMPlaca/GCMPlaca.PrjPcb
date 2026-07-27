@@ -55,7 +55,7 @@ AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
 AnnotateSuffix=
 AnnotateScope=All
-AnnotateOrder=-1
+AnnotateOrder=0
 DoLibraryUpdate=1
 DoDatabaseUpdate=1
 ClassGenCCAutoEnabled=1
@@ -83,7 +83,7 @@ GenerateClassCluster=0
 DocumentUniqueId=FWQMNDYJ
 
 [Document3]
-DocumentPath=Schlib1.SchLib
+DocumentPath=GCMSCHLibrerias.SchLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0
@@ -100,7 +100,7 @@ GenerateClassCluster=0
 DocumentUniqueId=PBDENGGD
 
 [Document4]
-DocumentPath=PcbLib1.PcbLib
+DocumentPath=GCMPCBLibrerias.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
 AnnotationIndexControlEnabled=0

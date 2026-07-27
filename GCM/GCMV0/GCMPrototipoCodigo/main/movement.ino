@@ -19,7 +19,7 @@ void moveForward(ToFSensor& tof) {
         digitalWrite(PIN_BIN1, HIGH);
         digitalWrite(PIN_BIN2, LOW);
         digitalWrite(PIN_AIN1, HIGH);
-        digitalWrite(PIN_AIN2, LOW);
+        digitalWrite(PIN_AIN2, LOW);    
         ledcWrite(PIN_PWMA, FORWARD_PWM);
         ledcWrite(PIN_PWMB, FORWARD_PWM);
 

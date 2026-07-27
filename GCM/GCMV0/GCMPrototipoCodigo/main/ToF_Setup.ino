@@ -49,7 +49,8 @@ void ToFSensor::update() {
         if(!ok[i]) continue;
         if(sensor[i].dataReady()) {
             if(!sensor[i].timeoutOccurred()) {
-                distance[i] = sensor[i].read(false);
+                uint16_t raw = sensor[i].read(false);
+                distance[i] = (uint16_t)(raw * TOF_TILT_CORRECTION);
             } else {            
                 ok[i] = false;
             }
@@ -87,22 +88,18 @@ bool ToFSensor::isCentered() const {
     bool rightCentered = isThereWall(RIGHT) && abs(wallDistance(RIGHT) - SIDE_WALL_THRESHOLD_CENTER) <= OFFSET_CENTER;
 
     if (isThereWall(FRONT)) {
+        bool hasSideRef = isThereWall(LEFT) || isThereWall(RIGHT);
+        if (!hasSideRef) return frontCentered;
         return frontCentered && ((leftCentered && isThereWall(LEFT)) || (rightCentered && isThereWall(RIGHT)));
     }
 
     if(isThereWall(LEFT) && isThereWall(RIGHT)) {
         return leftCentered && rightCentered;
     }
-
-    if(isThereWall(LEFT)) {
-        return leftCentered;
-    }
+    if(isThereWall(LEFT)) return leftCentered;
+    if(isThereWall(RIGHT)) return rightCentered;
     
-    if(isThereWall(RIGHT)) {
-        return rightCentered;
-    }
-    
-    return true;
+    return false;
 }
 
 float ToFSensor::wallDistance(WallSides side) const {

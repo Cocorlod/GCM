@@ -7,7 +7,7 @@
 #define PIN_SCL 11 
 #define PIN_SDA 12
 #define I2C_CLOCK 400000UL
-#define I2C_DEFAULT_ADDRESS 0x29
+#define I2C_DEFAULT_ADDRESS 0x30
 
 /*
 XSHUT1-> FR 0
@@ -34,6 +34,7 @@ static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
 static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
 
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
+static constexpr float TOF_TILT_CORRECTION = 1;
 
 enum SensorID : uint8_t {
 

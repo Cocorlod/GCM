@@ -46,12 +46,10 @@ void RobotFSM::update() {
             stopMotors();
 
             if(digitalRead(CLEAR_BUTTON_PIN) == LOW) {
-
                 if(clearButtonPressedTime == 0)
                     clearButtonPressedTime = millis();
 
                 if(millis() - clearButtonPressedTime >= 2000) {
-
                     clearPath();
 
                     maze.reset();
@@ -67,6 +65,7 @@ void RobotFSM::update() {
                     state = WAITING;
 
                     clearButtonPressedTime = 0;
+                    debugPrint("Memory erased");
                 }
             }
             else {
@@ -117,13 +116,13 @@ void RobotFSM::update() {
         case EXPLORATION: {
 
             bool front = tof.isThereWall(FRONT);
-            bool left  = tof.isThereWall(LEFT);
+            bool left = tof.isThereWall(LEFT);
             bool right = tof.isThereWall(RIGHT);
 
             bool centered = tof.isCentered();
 
             bool rawDecision = centered && (front || (!left || !right));
-
+           
             if(explorationBoundary.check(rawDecision)) {
 
                 stopMotors();
@@ -133,6 +132,13 @@ void RobotFSM::update() {
                 maze.recordWalls(tof, currentCell, heading);
 
                 TurnDecision move = chooseDFS(maze, currentCell, heading);
+
+                static unsigned long lastMoveDebug = 0;
+
+                if(millis() - lastMoveDebug >= 300) {
+                    lastMoveDebug = millis();
+                    debugPrintf("Move: %d", (int)move);
+                }
 
                 if(move == NO_MOVE) {
 
@@ -165,6 +171,12 @@ void RobotFSM::update() {
                 executeMove(move, heading);
             }
             else {
+                static unsigned long lastMoveDebug = 0;
+
+                if(millis() - lastMoveDebug >= 300) {
+                    lastMoveDebug = millis();
+                    debugPrint("Moving Forward");
+                }
 
                 moveForward(tof);
             }
