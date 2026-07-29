@@ -9,6 +9,27 @@ const uint8_t ToFSensor::XSHUTPIN[SENSOR_COUNT] = {
     PIN_XSHUT6
 };
 
+bool ToFSensor::initSensor(uint8_t i) {
+    digitalWrite(XSHUTPIN[i], LOW);
+    delay(5);
+    digitalWrite(XSHUTPIN[i], HIGH);
+    delay(10);
+
+    sensor[i].setTimeout(500);
+
+    if (!sensor[i].init()) {
+        digitalWrite(XSHUTPIN[i], LOW);
+        return false;
+    }
+
+    sensor[i].setAddress(I2C_DEFAULT_ADDRESS + i);
+    sensor[i].setDistanceMode(VL53L1X::Short);
+    sensor[i].setMeasurementTimingBudget(20000);
+    sensor[i].startContinuous(20);
+
+    return true;
+}
+
 bool ToFSensor::beginToF() {
     Wire.begin(PIN_SDA, PIN_SCL);
     Wire.setClock(I2C_CLOCK);
@@ -21,39 +42,44 @@ bool ToFSensor::beginToF() {
     bool allOk = true;
 
     for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
-        digitalWrite(XSHUTPIN[i], HIGH);
-        delay(10);
+        ok[i] = initSensor(i);
 
-        sensor[i].setTimeout(500);
-
-        if (!sensor[i].init()) {
-            digitalWrite(XSHUTPIN[i], LOW);
-            ok[i] = false;
+        if (!ok[i]) {
             allOk = false;
-            continue;
         }
-
-        sensor[i].setAddress(I2C_DEFAULT_ADDRESS + i);
-        sensor[i].setDistanceMode(VL53L1X::Short);
-        sensor[i].setMeasurementTimingBudget(20000);
-        sensor[i].startContinuous(20);
-
-        ok[i] = true;
     }
 
     if (allOk) {
-        Serial.println("All ToF sensors initialized successfully.");
+        debugPrint("All ToF sensors initialized successfully.");
     } else {
-        Serial.println("ToF Failed");
+        debugPrint("ToF Failed");
     }
 
     return allOk;
 }
 
+void ToFSensor::tryRecoverSensor(uint8_t i) {
+    uint32_t now = millis();
+
+    if (now - lastRecoveryAttempt[i] < SENSOR_RECOVERY_INTERVAL_MS)
+        return;
+
+    lastRecoveryAttempt[i] = now;
+
+    // Only the flaky pair members really need this, but it's harmless
+    // to allow any sensor to reconnect if its cable comes back.
+    if (initSensor(i)) {
+        ok[i] = true;
+        debugPrintf("Sensor %d recovered", i);
+    }
+}
+
 void ToFSensor::update() {
     for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
-        if (!ok[i])
+        if (!ok[i]) {
+            tryRecoverSensor(i);
             continue;
+        }
 
         if (sensor[i].dataReady()) {
             if (!sensor[i].timeoutOccurred()) {
@@ -67,6 +93,7 @@ void ToFSensor::update() {
                 }
             } else {
                 ok[i] = false;
+                lastRecoveryAttempt[i] = millis();
             }
         }
     }
@@ -101,43 +128,41 @@ bool ToFSensor::isThereWall(WallSides side) const {
     }
 }
 
+// primary is preferred as the "trusted" lone reading when only one is available.
+// For FRONT: primary=FRONT_R, secondary=FRONT_L (FRONT_L is the flaky one, "sensor 2")
+// For LEFT:  primary=LEFT_B,  secondary=LEFT_F  (LEFT_F is the flaky one, "sensor 6")
+float ToFSensor::pairDistance(SensorID primary, SensorID secondary) const {
+    bool pOk = ok[primary];
+    bool sOk = ok[secondary];
+
+    if (!pOk && !sOk)
+        return SENSOR_INVALID_DISTANCE;
+
+    // Only the trusted sensor is online -> use it purely.
+    if (!sOk)
+        return distance[primary];
+
+    // Only the flaky sensor is online -> use it purely (better than nothing).
+    if (!pOk)
+        return distance[secondary];
+
+    // Both online -> average, same disagreement-guard as before.
+    if (abs((int)distance[primary] - (int)distance[secondary]) < MAX_ALLOWED_DIFF) {
+        return (distance[primary] + distance[secondary]) / 2.0f;
+    }
+
+    return min(distance[primary], distance[secondary]);
+}
+
 float ToFSensor::wallDistance(WallSides side) const {
     switch (side) {
-        case FRONT: {
-            bool lOk = ok[FRONT_L];
-            bool rOk = ok[FRONT_R];
+        case FRONT:
+            // FRONT_R = sensor 1 (trusted), FRONT_L = sensor 2 (flaky cable)
+            return pairDistance(FRONT_R, FRONT_L);
 
-            if (!lOk && !rOk)
-                return SENSOR_INVALID_DISTANCE;
-            if (!lOk)
-                return distance[FRONT_R];
-            if (!rOk)
-                return distance[FRONT_L];
-
-            if (abs((int)distance[FRONT_L] - (int)distance[FRONT_R]) < MAX_ALLOWED_DIFF) {
-                return (distance[FRONT_L] + distance[FRONT_R]) / 2.0f;
-            }
-
-            return min(distance[FRONT_L], distance[FRONT_R]);
-        }
-
-        case LEFT: {
-            bool fOk = ok[LEFT_F];
-            bool bOk = ok[LEFT_B];
-
-            if (!fOk && !bOk)
-                return SENSOR_INVALID_DISTANCE;
-            if (!fOk)
-                return distance[LEFT_B];
-            if (!bOk)
-                return distance[LEFT_F];
-
-            if (abs((int)distance[LEFT_F] - (int)distance[LEFT_B]) < MAX_ALLOWED_DIFF) {
-                return (distance[LEFT_F] + distance[LEFT_B]) / 2.0f;
-            }
-
-            return min(distance[LEFT_F], distance[LEFT_B]);
-        }
+        case LEFT:
+            // LEFT_B = sensor 5 (trusted), LEFT_F = sensor 6 (flaky cable)
+            return pairDistance(LEFT_B, LEFT_F);
 
         case RIGHT: {
             bool fOk = ok[RIGHT_F];

@@ -30,14 +30,17 @@
 #define OFFSET_CENTER 10
 
 static constexpr int16_t MAX_ALLOWED_DIFF = 90;
-static constexpr int16_t FRONT_WALL_THRESHOLD = 250;
+static constexpr int16_t FRONT_WALL_THRESHOLD = 60;
 static constexpr int16_t SIDE_WALL_THRESHOLD = 250;
 
 static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
 static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
 
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
-static constexpr float TOF_TILT_CORRECTION = 1;
+static constexpr float TOF_TILT_CORRECTION = 1.65f;
+
+// How often (ms) to retry bringing a flaky/offline sensor back online.
+static constexpr uint32_t SENSOR_RECOVERY_INTERVAL_MS = 500;
 
 enum SensorID : uint8_t {
     FRONT_R = 0,
@@ -74,5 +77,16 @@ private:
     bool ok[SENSOR_COUNT] = {false};
     uint16_t distance[SENSOR_COUNT] = {0};
 
+    // Recovery bookkeeping for flaky sensors (e.g. loose XSHUT/I2C cabling).
+    uint32_t lastRecoveryAttempt[SENSOR_COUNT] = {0};
+
     static const uint8_t XSHUTPIN[SENSOR_COUNT];
+
+    bool initSensor(uint8_t i);
+    void tryRecoverSensor(uint8_t i);
+
+    // Generic pair-fallback logic used by FRONT / LEFT / RIGHT.
+    // primary = the more reliable sensor of the pair (e.g. FRONT_R, LEFT_B)
+    // secondary = the flaky one (e.g. FRONT_L, LEFT_F)
+    float pairDistance(SensorID primary, SensorID secondary) const;
 };

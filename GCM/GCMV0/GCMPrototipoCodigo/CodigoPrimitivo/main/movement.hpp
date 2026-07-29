@@ -17,7 +17,7 @@
 #define PWM_RESOLUTION 8
 
 #define TURN_PWM 127
-#define FORWARD_PWM 110
+#define FORWARD_PWM 140
 
 #define TURN_DELAY 200
 

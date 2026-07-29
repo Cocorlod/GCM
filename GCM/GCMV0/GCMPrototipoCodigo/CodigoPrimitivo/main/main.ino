@@ -26,8 +26,6 @@ void setup() {
 }
 
 void loop() {
-
-    // Stop robot
     if (bluetoothStop) {
         bluetoothStop = false;
         started = false;
@@ -36,7 +34,6 @@ void loop() {
         debugPrint("Robot stopped");
     }
 
-    // Manual Bluetooth commands
     if (bluetoothCommand != CMD_NONE) {
 
         switch (bluetoothCommand) {
@@ -77,7 +74,6 @@ void loop() {
         return;
     }
 
-    // Start robot
     if (!started && (digitalRead(47) == LOW || bluetoothStart)) {
         started = true;
         bluetoothStart = false;
@@ -87,23 +83,19 @@ void loop() {
         Serial.println("Started");
     }
 
-    if (!started)
-        return;
+    if (!started) return;
 
-    // Update sensors
     tof.update();
 
     bool frontWall = tof.isThereWall(FRONT);
     bool leftWall  = tof.isThereWall(LEFT);
     bool rightWall = tof.isThereWall(RIGHT);
 
-    // Decision only when a front wall exists
     if (frontWall) {
 
         stopMotors();
         delay(20);
 
-        // Refresh measurements
         tof.update();
 
         leftWall  = tof.isThereWall(LEFT);
@@ -128,7 +120,7 @@ void loop() {
         else {
 
             debugPrint("Turn Back");
-
+            
             turnBack();
             delay(600);
 
@@ -140,7 +132,6 @@ void loop() {
         return;
     }
 
-    // No front wall -> keep moving
     moveForward(tof);
 
     static unsigned long lastPrint = 0;

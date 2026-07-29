@@ -11,12 +11,10 @@ static constexpr int16_t MAX_PLAUSIBLE_ALIGNMENT_ERROR = 150;
 
 static bool wasWallFollowing = false;
 
-void moveForward(ToFSensor& tof)
-{
+void moveForward(ToFSensor& tof) {
     bool leftWall  = tof.isThereWall(LEFT);
     bool rightWall = tof.isThereWall(RIGHT);
 
-    // No walls -> drive straight
     if (!leftWall && !rightWall) {
         digitalWrite(PIN_STBY, HIGH);
 
@@ -105,8 +103,8 @@ void turnRight() {
     digitalWrite(PIN_AIN1, HIGH);
     digitalWrite(PIN_AIN2, LOW);
 
-    ledcWrite(PIN_PWMA, TURN_PWM);
-    ledcWrite(PIN_PWMB, TURN_PWM);
+    ledcWrite(PIN_PWMA, TURN_PWM + 10);
+    ledcWrite(PIN_PWMB, TURN_PWM + 10);
 }
 
 void turnBack() {
