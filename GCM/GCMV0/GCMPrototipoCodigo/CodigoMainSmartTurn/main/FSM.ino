@@ -9,7 +9,7 @@ static void executeMove(TurnDecision decision, Heading& heading) {
         case TURN_LEFT:
             stopMotors();
             delay(DELAY_STOP_MS);
-            turn(LEFT);
+            turn(LEFT, tof);
             delay(TURN_DELAY);
             heading = rotate(LEFT, heading);
             stopMotors();
@@ -20,7 +20,7 @@ static void executeMove(TurnDecision decision, Heading& heading) {
         case TURN_RIGHT:
             stopMotors();
             delay(DELAY_STOP_MS);
-            turn(RIGHT);
+            turn(RIGHT, tof);
             delay(TURN_DELAY);
             heading = rotate(RIGHT, heading);
             stopMotors();
@@ -31,7 +31,7 @@ static void executeMove(TurnDecision decision, Heading& heading) {
         case TURN_BACK:
             stopMotors();
             delay(DELAY_STOP_MS);
-            turn(BACK);
+            turn(BACK, tof);
             delay(2 * TURN_DELAY);
             heading = rotate(BACK, heading);
             stopMotors();
@@ -54,17 +54,17 @@ static void correctHeadingInPlace(Heading& heading, Heading desired) {
 
     switch (d) {
         case TURN_LEFT:
-            turn(LEFT);
+            turn(LEFT, tof);
             delay(TURN_DELAY);
             heading = rotate(LEFT, heading);
             break;
         case TURN_RIGHT:
-            turn(RIGHT);
+            turn(RIGHT, tof);
             delay(TURN_DELAY);
             heading = rotate(RIGHT, heading);
             break;
         case TURN_BACK:
-            turn(BACK);
+            turn(BACK, tof);
             delay(2 * TURN_DELAY);
             heading = rotate(BACK, heading);
             break;

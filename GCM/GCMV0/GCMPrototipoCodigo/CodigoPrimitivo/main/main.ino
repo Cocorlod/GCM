@@ -94,7 +94,7 @@ void loop() {
     if (frontWall) {
 
         stopMotors();
-        delay(20);
+        delay(100);
 
         tof.update();
 
