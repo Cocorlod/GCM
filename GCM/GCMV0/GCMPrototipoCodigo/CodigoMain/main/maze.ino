@@ -1,7 +1,5 @@
 #include "maze.hpp"
 
-// Grid-indexed lookup for O(1) cellAt(), replacing the old linear scan.
-// Kept file-local (not a Maze member) so maze.hpp needs no changes.
 static constexpr int16_t GRID_SIZE = 64;             
 static constexpr int16_t GRID_OFFSET = GRID_SIZE / 2;  
 
@@ -167,16 +165,16 @@ int16_t Maze::visitCell(int16_t fromIndex, Heading heading) {
 void Maze::recordWalls(ToFSensor& tof, uint16_t index, Heading heading) {
     if(index >= count) return;
 
-    if(tof.isThereWall(FRONT)) {
-        setWall(index, localToGlobal(FRONT, heading));
+    if(tof.isThereWall(WALL_FRONT)) {
+        setWall(index, localToGlobal(WALL_FRONT, heading));
     }
 
-    if(tof.isThereWall(LEFT)) {
-        setWall(index, localToGlobal(LEFT, heading));
+    if(tof.isThereWall(WALL_LEFT)) {
+        setWall(index, localToGlobal(WALL_LEFT, heading));
     }
 
-    if(tof.isThereWall(RIGHT)) {
-        setWall(index, localToGlobal(RIGHT, heading));
+    if(tof.isThereWall(WALL_RIGHT)) {
+        setWall(index, localToGlobal(WALL_RIGHT, heading));
     }
 }
 

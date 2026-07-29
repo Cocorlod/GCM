@@ -17,17 +17,28 @@ enum TurnDecision : uint8_t {
 TurnDecision DFS(Maze& maze, uint16_t current, Heading heading);
 bool explorationComplete();
 
+TurnDecision decisionForHeading(Heading current, Heading desired);
+
 void floodFill(Maze& maze, uint16_t goalCell);
 
 bool goalDetected();
-
-void beginCellTravel();
-bool cellComplete();
+void commitGoal(Maze& maze, uint16_t currentCell);
 
 bool buildSpeedrunPath(Maze& maze, uint16_t startCell, uint16_t goalCell);
 TurnDecision speedrunNext();
 bool speedrunFinished();
-bool checkGoalAndBuildPath(Maze& maze, uint16_t currentCell);
+void resetSpeedrunProgress();
+
+void buildReturnPath();
+TurnDecision returnPathNext();
+bool returnPathFinished();
+
+Heading rotate(Turn t, Heading h);
+
+void resetExploration();
+
+void beginCellTravel();
+bool cellComplete();
 
 void savePath();
 bool loadPath();

@@ -1,4 +1,5 @@
 #include "ToF_Setup.hpp"
+#include "bluetooth.hpp"
 
 const uint8_t ToFSensor::XSHUTPIN[SENSOR_COUNT] = {
     PIN_XSHUT1,
@@ -105,13 +106,13 @@ bool ToFSensor::sensorOk(SensorID id) const {
 
 bool ToFSensor::isThereWall(WallSides side) const {
     switch (side) {
-        case FRONT:
+        case WALL_FRONT:
             return wallDistance(side) < FRONT_WALL_THRESHOLD;
 
-        case LEFT:
+        case WALL_LEFT:
             return wallDistance(side) < SIDE_WALL_THRESHOLD;
 
-        case RIGHT:
+        case WALL_RIGHT:
             return wallDistance(side) < SIDE_WALL_THRESHOLD;
 
         default:
@@ -141,13 +142,13 @@ float ToFSensor::pairDistance(SensorID primary, SensorID secondary) const {
 
 float ToFSensor::wallDistance(WallSides side) const {
     switch (side) {
-        case FRONT:
+        case WALL_FRONT:
             return pairDistance(FRONT_R, FRONT_L);
 
-        case LEFT:
+        case WALL_LEFT:
             return pairDistance(LEFT_B, LEFT_F);
 
-        case RIGHT: {
+        case WALL_RIGHT: {
             bool fOk = ok[RIGHT_F];
             bool bOk = ok[RIGHT_B];
 
@@ -175,13 +176,13 @@ int16_t ToFSensor::alignmentError(WallSides side) const {
         return 0;
 
     switch (side) {
-        case LEFT:
+        case WALL_LEFT:
             if (!ok[LEFT_F] || !ok[LEFT_B])
                 return 0;
 
             return (int16_t)distance[LEFT_F] - (int16_t)distance[LEFT_B];
 
-        case RIGHT:
+        case WALL_RIGHT:
             if (!ok[RIGHT_F] || !ok[RIGHT_B])
                 return 0;
 

@@ -11,8 +11,8 @@ static constexpr int16_t MAX_PLAUSIBLE_ALIGNMENT_ERROR = 150;
 static bool wasWallFollowing = false;
 
 void moveForward(ToFSensor& tof) {
-    bool leftWall  = tof.isThereWall(LEFT);
-    bool rightWall = tof.isThereWall(RIGHT);
+    bool leftWall  = tof.isThereWall(WALL_LEFT);
+    bool rightWall = tof.isThereWall(WALL_RIGHT);
 
     if (!leftWall && !rightWall) {
         digitalWrite(PIN_STBY, HIGH);
@@ -33,13 +33,13 @@ void moveForward(ToFSensor& tof) {
     float error;
 
     if (leftWall && rightWall) {
-        error = (tof.alignmentError(LEFT) - tof.alignmentError(RIGHT)) * 0.5f;
+        error = (tof.alignmentError(WALL_LEFT) - tof.alignmentError(WALL_RIGHT)) * 0.5f;
     }
     else if (leftWall) {
-        error = tof.alignmentError(LEFT);
+        error = tof.alignmentError(WALL_LEFT);
     }
     else {
-        error = -tof.alignmentError(RIGHT);
+        error = -tof.alignmentError(WALL_RIGHT);
     }
 
     error = constrain(error, -MAX_PLAUSIBLE_ALIGNMENT_ERROR, MAX_PLAUSIBLE_ALIGNMENT_ERROR);
@@ -81,7 +81,7 @@ void moveForward(ToFSensor& tof) {
 
 void turn(Turn turn) {
     switch(turn) {
-        case LEFT_T: {
+        case LEFT: {
             digitalWrite(PIN_STBY, HIGH);
             digitalWrite(PIN_BIN1, HIGH);
             digitalWrite(PIN_BIN2, LOW);
@@ -91,7 +91,7 @@ void turn(Turn turn) {
             ledcWrite(PIN_PWMB, TURN_PWM);
             break;
         }
-        case RIGHT_T: {
+        case RIGHT: {
             digitalWrite(PIN_STBY, HIGH);
             digitalWrite(PIN_BIN1, LOW);
             digitalWrite(PIN_BIN2, LOW);

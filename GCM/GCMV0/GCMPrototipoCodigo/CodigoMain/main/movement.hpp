@@ -25,8 +25,8 @@ extern const float KP;
 extern const float KD;
 
 enum Turn : uint8_t {
-  LEFT_T,
-  RIGHT_T,
+  LEFT,
+  RIGHT,
   BACK
 };
 

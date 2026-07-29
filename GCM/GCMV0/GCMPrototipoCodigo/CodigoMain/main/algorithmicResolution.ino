@@ -2,12 +2,7 @@
 #include "bluetooth.hpp"
 #include <Preferences.h>
 
-// ---------------------------------------------------------------------------
-// DFS exploration state
-// ---------------------------------------------------------------------------
-
-static bool goalFound = false; // confirmed by the IR goal sensor via checkGoalAndBuildPath()
-
+static bool goalFound = false;
 static int16_t dfsStack[MAZE_MAX_CELLS];
 static int16_t dfsStackSize = 0;
 static bool dfsDone = false;
@@ -32,10 +27,6 @@ bool explorationComplete() {
     return dfsDone || goalFound;
 }
 
-// ---------------------------------------------------------------------------
-// Cell-travel timing (dead reckoning, unchanged)
-// ---------------------------------------------------------------------------
-
 static constexpr float CELL_LENGTH_MM = 280.0f;
 static constexpr float NOMINAL_FORWARD_SPEED_MM_S = 300.0f;
 static constexpr uint32_t CELL_TRAVEL_TIME_MS = (uint32_t)((CELL_LENGTH_MM / NOMINAL_FORWARD_SPEED_MM_S) * 1000.0f);
@@ -59,10 +50,6 @@ bool cellComplete() {
     return false;
 }
 
-// ---------------------------------------------------------------------------
-// Goal sensor (debounce logic unchanged)
-// ---------------------------------------------------------------------------
-
 bool goalDetected() {
     static uint8_t consecutiveHits = 0;
     static constexpr uint8_t REQUIRED_CONSECUTIVE = 4;
@@ -76,11 +63,27 @@ bool goalDetected() {
     return consecutiveHits >= REQUIRED_CONSECUTIVE;
 }
 
-// ---------------------------------------------------------------------------
-// Shared heading helpers (used by DFS backtracking AND speedrun path build)
-// ---------------------------------------------------------------------------
+void commitGoal(Maze& maze, uint16_t currentCell) {
+    if (goalFound) return;
 
-static Heading rotate(Turn t, Heading h) {
+    maze.setGoal(currentCell);
+    goalFound = true;
+
+    debugPrintf("Goal reached at cell %u", currentCell);
+
+    stopMotors();
+
+    int16_t startCell = maze.cellAt(0, 0);
+
+    if (startCell < 0) {
+        debugPrint("Flood fill: start cell (0,0) not found (unexpected)");
+        return;
+    }
+
+    buildSpeedrunPath(maze, (uint16_t)startCell, currentCell);
+}
+
+Heading rotate(Turn t, Heading h) {
     switch (t) {
         case LEFT:  return (Heading)((h + 3) % 4);
         case RIGHT: return (Heading)((h + 1) % 4);
@@ -96,7 +99,7 @@ static Heading directionBetween(const Cell& fromCell, const Cell& toCell) {
     return SOUTH;
 }
 
-static TurnDecision decisionForHeading(Heading current, Heading desired) {
+TurnDecision decisionForHeading(Heading current, Heading desired) {
     switch (((int8_t)desired - (int8_t)current + 4) % 4) {
         case 0:  return GO_FORWARD;
         case 1:  return TURN_RIGHT;
@@ -105,24 +108,14 @@ static TurnDecision decisionForHeading(Heading current, Heading desired) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// DFS
-// ---------------------------------------------------------------------------
-
 TurnDecision DFS(Maze& maze, uint16_t current, Heading heading)
 {
     if (dfsDone || goalFound) return NO_MOVE;
 
     Cell &cell = maze.getCell(current);
-
-    bool alreadyVisited = cell.visited;
     cell.visited = true;
 
-    // Push only the first time we truly arrive at a cell. The previous
-    // "peekCell() != current" check pushed a duplicate whenever a
-    // previously-visited cell (reached again via a different branch) wasn't
-    // on top of the stack, corrupting the backtrack order.
-    if (!alreadyVisited)
+    if (peekCell() != (int16_t)current)
         pushCell(current);
 
     Heading order[4] =
@@ -150,16 +143,11 @@ TurnDecision DFS(Maze& maze, uint16_t current, Heading heading)
 
         int16_t neighbour = maze.adjacentCell(current, dir);
 
-        // Not created yet -> genuinely unexplored territory, go there.
         if (neighbour == -1)
         {
             return action[i];
         }
 
-        // A Cell only ever exists once visitCell() has created it, and that
-        // call sets visited = true immediately - so given the current
-        // maze.cpp this branch can't actually trigger. Left in as a
-        // defensive check in case that invariant ever changes.
         if (!maze.getCell(neighbour).visited)
         {
             return action[i];
@@ -182,9 +170,6 @@ TurnDecision DFS(Maze& maze, uint16_t current, Heading heading)
     return decisionForHeading(heading, h);
 }
 
-// ---------------------------------------------------------------------------
-// Flood fill: BFS distance field seeded at the goal, over explored cells only
-// ---------------------------------------------------------------------------
 
 static constexpr uint16_t BFS_UNVISITED = 0xFFFF;
 
@@ -215,9 +200,9 @@ void floodFill(Maze& maze, uint16_t goalCell) {
             if (maze.isWall((uint16_t)cellIndex, WALL_BITS[dir])) continue;
 
             int16_t neighbor = maze.adjacentCell(cellIndex, COMPASS[dir]);
-            if (neighbor == -1) continue; // not yet explored, can't route through it
+            if (neighbor == -1) continue;
 
-            if (bfsDistance[neighbor] != BFS_UNVISITED) continue; // already reached
+            if (bfsDistance[neighbor] != BFS_UNVISITED) continue;
 
             bfsDistance[neighbor] = currentDist + 1;
             bfsQueue[tail++] = neighbor;
@@ -242,7 +227,7 @@ bool buildSpeedrunPath(Maze& maze, uint16_t startCell, uint16_t goalCell) {
 
     speedrunPathLength = 0;
 
-    Heading currentHeading = NORTH; // speed run always starts facing NORTH, same as config()
+    Heading currentHeading = NORTH;
     int16_t cellIndex = (int16_t)startCell;
     uint16_t remainingDist = bfsDistance[startCell];
 
@@ -298,41 +283,81 @@ TurnDecision speedrunNext() {
 }
 
 bool speedrunFinished() {
-    return speedrunPathReady && speedrunCursor >= speedrunPathLength;
+    return !speedrunPathReady || speedrunCursor >= speedrunPathLength;
 }
 
-// ---------------------------------------------------------------------------
-// Goal handling: confirm with the IR sensor, mark it, build + save the path,
-// stop the robot immediately.
-// ---------------------------------------------------------------------------
+void resetSpeedrunProgress() {
+    speedrunCursor = 0;
+}
 
-bool checkGoalAndBuildPath(Maze& maze, uint16_t currentCell) {
-    if (goalFound) return true;
+static TurnDecision returnPath[MAX_PATH_LENGTH];
+static uint16_t returnPathLength = 0;
+static uint16_t returnCursor = 0;
+static bool returnPathReady = false;
 
-    if (!goalDetected()) return false;
+void buildReturnPath() {
+    returnPathLength = 0;
+    returnPathReady = false;
 
-    maze.setGoal(currentCell);
-    goalFound = true;
-
-    debugPrintf("Goal reached at cell %u", currentCell);
-
-    stopMotors();
-
-    int16_t startCell = maze.cellAt(0, 0);
-
-    if (startCell < 0) {
-        debugPrint("Flood fill: start cell (0,0) not found (unexpected)");
-        return true; // goal is still reached, just couldn't build the path
+    if (!speedrunPathReady || speedrunPathLength == 0) {
+        debugPrint("Return path: no speedrun path available");
+        return;
     }
 
-    buildSpeedrunPath(maze, (uint16_t)startCell, currentCell);
+    static Heading forwardHeadingAtStep[MAX_PATH_LENGTH];
 
-    return true;
+    Heading h = NORTH;
+    for (uint16_t i = 0; i < speedrunPathLength; i++) {
+        switch (speedrunPath[i]) {
+            case TURN_LEFT:  h = rotate(LEFT,  h); break;
+            case TURN_RIGHT: h = rotate(RIGHT, h); break;
+            case TURN_BACK:  h = rotate(BACK,  h); break;
+            default: break;
+        }
+        forwardHeadingAtStep[i] = h;
+    }
+
+    uint16_t n = speedrunPathLength;
+    Heading currentHeading = forwardHeadingAtStep[n - 1];
+
+    for (uint16_t k = 0; k < n; k++) {
+        Heading forwardStepHeading = forwardHeadingAtStep[n - 1 - k];
+        Heading desired = rotate(BACK, forwardStepHeading);
+
+        returnPath[returnPathLength++] = decisionForHeading(currentHeading, desired);
+        currentHeading = desired;
+    }
+
+    returnCursor = 0;
+    returnPathReady = true;
+
+    debugPrintf("Return path built: %u steps", returnPathLength);
 }
 
-// ---------------------------------------------------------------------------
-// Persistence (ESP32 NVS via Preferences)
-// ---------------------------------------------------------------------------
+TurnDecision returnPathNext() {
+    if (!returnPathReady || returnCursor >= returnPathLength) {
+        return NO_MOVE;
+    }
+    return returnPath[returnCursor++];
+}
+
+bool returnPathFinished() {
+    return !returnPathReady || returnCursor >= returnPathLength;
+}
+
+void resetExploration() {
+    dfsStackSize = 0;
+    dfsDone = false;
+    goalFound = false;
+
+    speedrunPathLength = 0;
+    speedrunCursor = 0;
+    speedrunPathReady = false;
+
+    returnPathLength = 0;
+    returnCursor = 0;
+    returnPathReady = false;
+}
 
 static Preferences prefs;
 static constexpr const char* PREF_NAMESPACE = "gcm";

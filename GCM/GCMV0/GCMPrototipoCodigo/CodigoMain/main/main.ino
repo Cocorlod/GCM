@@ -1,12 +1,14 @@
 #include "main.hpp"
 
 RobotFSM FSM;
+ToFSensor tof;
 
 void setup() {
     Serial.begin(SERIAL_SPEED);
     beginBluetooth();
 
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(CLEAR_BUTTON_PIN, INPUT_PULLUP);
 
     ledcAttach(PIN_PWMA, PWM_FREQ, PWM_RESOLUTION);
     ledcAttach(PIN_PWMB, PWM_FREQ, PWM_RESOLUTION);

@@ -37,7 +37,6 @@ static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
 static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
 
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
-static constexpr float TOF_TILT_CORRECTION = 1.65f;
 
 static constexpr uint32_t SENSOR_RECOVERY_INTERVAL_MS = 500;
 
@@ -51,9 +50,9 @@ enum SensorID : uint8_t {
 };
 
 enum WallSides : int8_t {
-    FRONT = 0,
-    RIGHT = 1,
-    LEFT = -1
+    WALL_FRONT = 0,
+    WALL_RIGHT = 1,
+    WALL_LEFT = -1
 };
 
 class ToFSensor {
@@ -85,3 +84,5 @@ private:
 
     float pairDistance(SensorID primary, SensorID secondary) const;
 };
+
+extern ToFSensor tof;
