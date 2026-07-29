@@ -33,9 +33,6 @@ static constexpr int16_t MAX_ALLOWED_DIFF = 90;
 static constexpr int16_t FRONT_WALL_THRESHOLD = 60;
 static constexpr int16_t SIDE_WALL_THRESHOLD = 250;
 
-static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
-static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
-
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
 
 static constexpr uint32_t SENSOR_RECOVERY_INTERVAL_MS = 500;
