@@ -111,7 +111,9 @@ void turn(Turn dir, ToFSensor& tof) {
 
     uint8_t pwm = (dir == BACK) ? TURN_PWM + 34 : TURN_PWM;
 
-    while (true) {
+    uint32_t start = millis();
+
+    while (millis() - start < 5000) {
         tof.update();
 
         ledcWrite(PIN_PWMA, pwm);

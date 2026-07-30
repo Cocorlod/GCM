@@ -37,7 +37,7 @@ static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
 static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
 
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
-static constexpr float TOF_TILT_CORRECTION = 1.65f;
+static constexpr float TOF_TILT_CORRECTION = 1;
 
 // How often (ms) to retry bringing a flaky/offline sensor back online.
 static constexpr uint32_t SENSOR_RECOVERY_INTERVAL_MS = 500;

@@ -55,6 +55,7 @@ void setup() {
   } else {
     sensor1_ok = true;
     sensor1.setAddress(0x30);
+    sensor1.setDistanceMode(VL53L1X::Short);
   }
 
   // Sensor 2
@@ -67,6 +68,7 @@ void setup() {
   } else {
     sensor2_ok = true;
     sensor2.setAddress(0x31);
+    sensor2.setDistanceMode(VL53L1X::Short);
   }
 
   // Sensor 3
@@ -79,6 +81,7 @@ void setup() {
   } else {
     sensor3_ok = true;
     sensor3.setAddress(0x32);
+    sensor3.setDistanceMode(VL53L1X::Short);
   }
 
   // Sensor 4
@@ -91,6 +94,7 @@ void setup() {
   } else {
     sensor4_ok = true;
     sensor4.setAddress(0x33);
+    sensor4.setDistanceMode(VL53L1X::Short);
   }
 
   // Sensor 5
@@ -103,6 +107,7 @@ void setup() {
   } else {
     sensor5_ok = true;
     sensor5.setAddress(0x34);
+    sensor5.setDistanceMode(VL53L1X::Short);
   }
 
   // Sensor 6
@@ -115,6 +120,7 @@ void setup() {
   } else {
     sensor6_ok = true;
     sensor6.setAddress(0x35);
+    sensor6.setDistanceMode(VL53L1X::Short);
   }
 
   // Start ranging only on working sensors
