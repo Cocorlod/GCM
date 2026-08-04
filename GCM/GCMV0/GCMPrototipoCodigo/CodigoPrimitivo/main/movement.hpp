@@ -17,9 +17,15 @@
 #define PWM_RESOLUTION 8
 
 #define TURN_PWM 127
-#define FORWARD_PWM 140
+#define FORWARD_PWM 80
 
 #define TURN_DELAY 200
+
+enum Turn : uint8_t {
+  LEFT,
+  RIGHT,
+  BACK
+};
 
 extern float previousError;
 extern uint32_t previousTime;
@@ -32,5 +38,7 @@ void moveForward(ToFSensor& tof);
 void turnLeft();
 void turnRight();
 void turnBack();
+
+void turn(Turn turn);
 
 void stopMotors();

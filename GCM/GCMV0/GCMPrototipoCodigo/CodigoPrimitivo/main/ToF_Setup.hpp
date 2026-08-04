@@ -33,13 +33,8 @@ static constexpr int16_t MAX_ALLOWED_DIFF = 90;
 static constexpr int16_t FRONT_WALL_THRESHOLD = 60;
 static constexpr int16_t SIDE_WALL_THRESHOLD = 250;
 
-static constexpr int16_t FRONT_WALL_THRESHOLD_CENTER = 93;
-static constexpr int16_t SIDE_WALL_THRESHOLD_CENTER = 87;
-
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
-static constexpr float TOF_TILT_CORRECTION = 1;
 
-// How often (ms) to retry bringing a flaky/offline sensor back online.
 static constexpr uint32_t SENSOR_RECOVERY_INTERVAL_MS = 500;
 
 enum SensorID : uint8_t {
@@ -52,9 +47,9 @@ enum SensorID : uint8_t {
 };
 
 enum WallSides : int8_t {
-    FRONT = 0,
-    RIGHT = 1,
-    LEFT = -1
+    WALL_FRONT = 0,
+    WALL_RIGHT = 1,
+    WALL_LEFT = -1
 };
 
 class ToFSensor {
@@ -70,6 +65,10 @@ public:
     float wallDistance(WallSides side) const;
     int16_t alignmentError(WallSides side) const;
 
+    bool frontAligned() const;
+    bool leftAligned() const;
+    bool rightAligned() const;
+
     uint16_t getDistance(SensorID id) const;
 
 private:
@@ -77,7 +76,6 @@ private:
     bool ok[SENSOR_COUNT] = {false};
     uint16_t distance[SENSOR_COUNT] = {0};
 
-    // Recovery bookkeeping for flaky sensors (e.g. loose XSHUT/I2C cabling).
     uint32_t lastRecoveryAttempt[SENSOR_COUNT] = {0};
 
     static const uint8_t XSHUTPIN[SENSOR_COUNT];
@@ -85,8 +83,7 @@ private:
     bool initSensor(uint8_t i);
     void tryRecoverSensor(uint8_t i);
 
-    // Generic pair-fallback logic used by FRONT / LEFT / RIGHT.
-    // primary = the more reliable sensor of the pair (e.g. FRONT_R, LEFT_B)
-    // secondary = the flaky one (e.g. FRONT_L, LEFT_F)
     float pairDistance(SensorID primary, SensorID secondary) const;
 };
+
+extern ToFSensor tof;

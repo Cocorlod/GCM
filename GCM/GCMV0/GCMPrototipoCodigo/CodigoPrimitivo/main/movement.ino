@@ -1,4 +1,3 @@
-#include "ToF_Setup.hpp"
 #include "movement.hpp"
 
 float previousError = 0.0f;
@@ -12,8 +11,8 @@ static constexpr int16_t MAX_PLAUSIBLE_ALIGNMENT_ERROR = 150;
 static bool wasWallFollowing = false;
 
 void moveForward(ToFSensor& tof) {
-    bool leftWall  = tof.isThereWall(LEFT);
-    bool rightWall = tof.isThereWall(RIGHT);
+    bool leftWall  = tof.isThereWall(WALL_LEFT);
+    bool rightWall = tof.isThereWall(WALL_RIGHT);
 
     if (!leftWall && !rightWall) {
         digitalWrite(PIN_STBY, HIGH);
@@ -34,27 +33,26 @@ void moveForward(ToFSensor& tof) {
     float error;
 
     if (leftWall && rightWall) {
-        error = (tof.alignmentError(LEFT) - tof.alignmentError(RIGHT)) * 0.5f;
+        error = (tof.alignmentError(WALL_LEFT) - tof.alignmentError(WALL_RIGHT)) * 0.5f;
     }
     else if (leftWall) {
-        error = tof.alignmentError(LEFT);
+        error = tof.alignmentError(WALL_LEFT);
     }
     else {
-        error = -tof.alignmentError(RIGHT);
+        error = -tof.alignmentError(WALL_RIGHT);
     }
 
     error = constrain(error, -MAX_PLAUSIBLE_ALIGNMENT_ERROR, MAX_PLAUSIBLE_ALIGNMENT_ERROR);
 
     uint32_t now = micros();
 
-    if (!wasWallFollowing)
-    {
+    if (!wasWallFollowing) {
         previousError = error;
         previousTime = now;
         wasWallFollowing = true;
     }
 
-    float dt = (now - previousTime) * 1e-6f;
+    float dt = max((now - previousTime) * 1e-6f, 0.001f);
 
     if (dt < 0.001f)
         dt = 0.001f;
@@ -81,48 +79,66 @@ void moveForward(ToFSensor& tof) {
     previousTime = now;
 }
 
-void turnLeft() {
+void turn(Turn dir, ToFSensor& tof) {
+    bool frontWall = tof.isThereWall(WALL_FRONT);
+    bool leftWall  = tof.isThereWall(WALL_LEFT);
+    bool rightWall = tof.isThereWall(WALL_RIGHT);
+
     digitalWrite(PIN_STBY, HIGH);
 
-    digitalWrite(PIN_BIN1, HIGH);
-    digitalWrite(PIN_BIN2, LOW);
+    switch(dir) {
+        case LEFT:
+            digitalWrite(PIN_BIN1, HIGH);
+            digitalWrite(PIN_BIN2, LOW);
+            digitalWrite(PIN_AIN1, LOW);
+            digitalWrite(PIN_AIN2, LOW);
+            break;
 
-    digitalWrite(PIN_AIN1, LOW);
-    digitalWrite(PIN_AIN2, LOW);
+        case RIGHT:
+            digitalWrite(PIN_BIN1, LOW);
+            digitalWrite(PIN_BIN2, LOW);
+            digitalWrite(PIN_AIN1, HIGH);
+            digitalWrite(PIN_AIN2, LOW);
+            break;
 
-    ledcWrite(PIN_PWMA, TURN_PWM);
-    ledcWrite(PIN_PWMB, TURN_PWM);
-}
+        case BACK:
+            digitalWrite(PIN_BIN1, LOW);
+            digitalWrite(PIN_BIN2, LOW);
+            digitalWrite(PIN_AIN1, HIGH);
+            digitalWrite(PIN_AIN2, LOW);
+            break;
+    }
 
-void turnRight() {
-    digitalWrite(PIN_STBY, HIGH);
+    uint8_t pwm = (dir == BACK) ? TURN_PWM + 34 : TURN_PWM;
 
-    digitalWrite(PIN_BIN1, LOW);
-    digitalWrite(PIN_BIN2, LOW);
+    uint32_t start = millis();
 
-    digitalWrite(PIN_AIN1, HIGH);
-    digitalWrite(PIN_AIN2, LOW);
+    while (millis() - start < 5000) {
+        tof.update();
 
-    ledcWrite(PIN_PWMA, TURN_PWM + 10);
-    ledcWrite(PIN_PWMB, TURN_PWM + 10);
-}
+        ledcWrite(PIN_PWMA, pwm);
+        ledcWrite(PIN_PWMB, pwm);
 
-void turnBack() {
-    digitalWrite(PIN_STBY, HIGH);
+        bool done = false;
 
-    digitalWrite(PIN_BIN1, LOW);
-    digitalWrite(PIN_BIN2, LOW);
+        if (tof.isThereWall(WALL_FRONT))
+            done |= tof.frontAligned();
 
-    digitalWrite(PIN_AIN1, HIGH);
-    digitalWrite(PIN_AIN2, LOW);
+        if (tof.isThereWall(WALL_LEFT))
+            done |= tof.leftAligned();
 
-    ledcWrite(PIN_PWMA, TURN_PWM + 34);
-    ledcWrite(PIN_PWMB, TURN_PWM + 34);
+        if (tof.isThereWall(WALL_RIGHT))
+            done |= tof.rightAligned();
+
+        if (done)
+            break;
+    }
+
+    stopMotors();
 }
 
 void stopMotors() {
     digitalWrite(PIN_STBY, LOW);
-
     ledcWrite(PIN_PWMA, 0);
     ledcWrite(PIN_PWMB, 0);
 }

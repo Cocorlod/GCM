@@ -1,4 +1,5 @@
 #include "ToF_Setup.hpp"
+#include "bluetooth.hpp"
 
 const uint8_t ToFSensor::XSHUTPIN[SENSOR_COUNT] = {
     PIN_XSHUT1,
@@ -66,8 +67,6 @@ void ToFSensor::tryRecoverSensor(uint8_t i) {
 
     lastRecoveryAttempt[i] = now;
 
-    // Only the flaky pair members really need this, but it's harmless
-    // to allow any sensor to reconnect if its cable comes back.
     if (initSensor(i)) {
         ok[i] = true;
         debugPrintf("Sensor %d recovered", i);
@@ -83,14 +82,7 @@ void ToFSensor::update() {
 
         if (sensor[i].dataReady()) {
             if (!sensor[i].timeoutOccurred()) {
-                uint16_t raw = sensor[i].read(false);
-
-                // Apply tilt correction only to the front sensors
-                if (i == FRONT_R || i == FRONT_L) {
-                    distance[i] = (uint16_t)(raw * TOF_TILT_CORRECTION);
-                } else {
-                    distance[i] = raw;
-                }
+                distance[i] = sensor[i].read(false);
             } else {
                 ok[i] = false;
                 lastRecoveryAttempt[i] = millis();
@@ -114,13 +106,13 @@ bool ToFSensor::sensorOk(SensorID id) const {
 
 bool ToFSensor::isThereWall(WallSides side) const {
     switch (side) {
-        case FRONT:
+        case WALL_FRONT:
             return wallDistance(side) < FRONT_WALL_THRESHOLD;
 
-        case LEFT:
+        case WALL_LEFT:
             return wallDistance(side) < SIDE_WALL_THRESHOLD;
 
-        case RIGHT:
+        case WALL_RIGHT:
             return wallDistance(side) < SIDE_WALL_THRESHOLD;
 
         default:
@@ -128,9 +120,6 @@ bool ToFSensor::isThereWall(WallSides side) const {
     }
 }
 
-// primary is preferred as the "trusted" lone reading when only one is available.
-// For FRONT: primary=FRONT_R, secondary=FRONT_L (FRONT_L is the flaky one, "sensor 2")
-// For LEFT:  primary=LEFT_B,  secondary=LEFT_F  (LEFT_F is the flaky one, "sensor 6")
 float ToFSensor::pairDistance(SensorID primary, SensorID secondary) const {
     bool pOk = ok[primary];
     bool sOk = ok[secondary];
@@ -138,15 +127,12 @@ float ToFSensor::pairDistance(SensorID primary, SensorID secondary) const {
     if (!pOk && !sOk)
         return SENSOR_INVALID_DISTANCE;
 
-    // Only the trusted sensor is online -> use it purely.
     if (!sOk)
         return distance[primary];
 
-    // Only the flaky sensor is online -> use it purely (better than nothing).
     if (!pOk)
         return distance[secondary];
 
-    // Both online -> average, same disagreement-guard as before.
     if (abs((int)distance[primary] - (int)distance[secondary]) < MAX_ALLOWED_DIFF) {
         return (distance[primary] + distance[secondary]) / 2.0f;
     }
@@ -156,15 +142,13 @@ float ToFSensor::pairDistance(SensorID primary, SensorID secondary) const {
 
 float ToFSensor::wallDistance(WallSides side) const {
     switch (side) {
-        case FRONT:
-            // FRONT_R = sensor 1 (trusted), FRONT_L = sensor 2 (flaky cable)
+        case WALL_FRONT:
             return pairDistance(FRONT_R, FRONT_L);
 
-        case LEFT:
-            // LEFT_B = sensor 5 (trusted), LEFT_F = sensor 6 (flaky cable)
+        case WALL_LEFT:
             return pairDistance(LEFT_B, LEFT_F);
 
-        case RIGHT: {
+        case WALL_RIGHT: {
             bool fOk = ok[RIGHT_F];
             bool bOk = ok[RIGHT_B];
 
@@ -192,13 +176,13 @@ int16_t ToFSensor::alignmentError(WallSides side) const {
         return 0;
 
     switch (side) {
-        case LEFT:
+        case WALL_LEFT:
             if (!ok[LEFT_F] || !ok[LEFT_B])
                 return 0;
 
             return (int16_t)distance[LEFT_F] - (int16_t)distance[LEFT_B];
 
-        case RIGHT:
+        case WALL_RIGHT:
             if (!ok[RIGHT_F] || !ok[RIGHT_B])
                 return 0;
 
@@ -207,6 +191,27 @@ int16_t ToFSensor::alignmentError(WallSides side) const {
         default:
             return 0;
     }
+}
+
+bool ToFSensor::frontAligned() const {
+    if (!ok[FRONT_L] || !ok[FRONT_R])
+        return false;
+
+    return abs((int)distance[FRONT_L] - (int)distance[FRONT_R]) < 8;
+}
+
+bool ToFSensor::leftAligned() const {
+    if (!ok[LEFT_F] || !ok[LEFT_B])
+        return false;
+
+    return abs((int)distance[LEFT_F] - (int)distance[LEFT_B]) < 8;
+}
+
+bool ToFSensor::rightAligned() const {
+    if (!ok[RIGHT_F] || !ok[RIGHT_B])
+        return false;
+
+    return abs((int)distance[RIGHT_F] - (int)distance[RIGHT_B]) < 8;
 }
 
 uint16_t ToFSensor::getDistance(SensorID id) const {

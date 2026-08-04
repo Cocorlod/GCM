@@ -45,19 +45,19 @@ void loop() {
                 break;
 
             case CMD_LEFT:
-                turnLeft();
+                turn(LEFT, tof);
                 delay(300);
                 stopMotors();
                 break;
 
             case CMD_RIGHT:
-                turnRight();
+                turn(RIGHT, tof);
                 delay(300);
                 stopMotors();
                 break;
 
             case CMD_BACK:
-                turnBack();
+                turn(BACK, tof);
                 delay(600);
                 stopMotors();
                 break;
@@ -75,10 +75,26 @@ void loop() {
     }
 
     if (!started && (digitalRead(47) == LOW || bluetoothStart)) {
-        started = true;
-        bluetoothStart = false;
 
-        delay(200);
+    started = true;
+    bluetoothStart = false;
+
+    delay(200);
+
+    while (true) {
+
+        tof.update();
+
+        bool ready = true;
+
+        for (int i = 0; i < SENSOR_COUNT; i++) {
+            ready &= tof.sensorOk((SensorID)i) && tof.getDistance((SensorID)i) != 0;
+
+        if (ready)
+            break;
+
+            delay(5);
+        }
 
         Serial.println("Started");
     }
@@ -87,9 +103,9 @@ void loop() {
 
     tof.update();
 
-    bool frontWall = tof.isThereWall(FRONT);
-    bool leftWall  = tof.isThereWall(LEFT);
-    bool rightWall = tof.isThereWall(RIGHT);
+    bool frontWall = tof.isThereWall(WALL_FRONT);
+    bool leftWall  = tof.isThereWall(WALL_LEFT);
+    bool rightWall = tof.isThereWall(WALL_RIGHT);
 
     if (frontWall) {
 
@@ -98,14 +114,14 @@ void loop() {
 
         tof.update();
 
-        leftWall  = tof.isThereWall(LEFT);
-        rightWall = tof.isThereWall(RIGHT);
+        leftWall  = tof.isThereWall(WALL_LEFT);
+        rightWall = tof.isThereWall(WALL_RIGHT);
 
         if (!leftWall) {
 
             debugPrint("Turn Left");
 
-            turnLeft();
+            turn(LEFT, tof);
             delay(300);
 
         }
@@ -113,7 +129,7 @@ void loop() {
 
             debugPrint("Turn Right");
 
-            turnRight();
+            turn(RIGHT, tof);
             delay(300);
 
         }
@@ -121,7 +137,7 @@ void loop() {
 
             debugPrint("Turn Back");
             
-            turnBack();
+            turn(BACK, tof);
             delay(600);
 
         }
@@ -139,13 +155,13 @@ void loop() {
     if (millis() - lastPrint > 300) {
 
         Serial.print("F: ");
-        Serial.print(tof.wallDistance(FRONT));
+        Serial.print(tof.wallDistance(WALL_FRONT));
 
         Serial.print("  L: ");
-        Serial.print(tof.wallDistance(LEFT));
+        Serial.print(tof.wallDistance(WALL_LEFT));
 
         Serial.print("  R: ");
-        Serial.println(tof.wallDistance(RIGHT));
+        Serial.println(tof.wallDistance(WALL_RIGHT));
 
         lastPrint = millis();
     }
