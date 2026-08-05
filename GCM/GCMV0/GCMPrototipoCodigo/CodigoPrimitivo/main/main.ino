@@ -76,28 +76,30 @@ void loop() {
 
     if (!started && (digitalRead(47) == LOW || bluetoothStart)) {
 
-    started = true;
-    bluetoothStart = false;
+        started = true;
+        bluetoothStart = false;
 
-    delay(200);
+        delay(200);
 
-    while (true) {
+        while (true) {
 
-        tof.update();
+            tof.update();
 
-        bool ready = true;
+            bool ready = true;
 
-        for (int i = 0; i < SENSOR_COUNT; i++) {
-            ready &= tof.sensorOk((SensorID)i) && tof.getDistance((SensorID)i) != 0;
+            for (int i = 0; i < SENSOR_COUNT; i++) {
+                ready &= tof.sensorOk((SensorID)i) && tof.getDistance((SensorID)i) != 0;
+            }
 
-        if (ready)
+            if (ready)
             break;
 
             delay(5);
         }
 
-        Serial.println("Started");
-    }
+    Serial.println("Started");
+
+}  
 
     if (!started) return;
 
@@ -122,7 +124,7 @@ void loop() {
             debugPrint("Turn Left");
 
             turn(LEFT, tof);
-            delay(300);
+            delay(3000);
 
         }
         else if (!rightWall) {
@@ -130,7 +132,7 @@ void loop() {
             debugPrint("Turn Right");
 
             turn(RIGHT, tof);
-            delay(300);
+            delay(3000);
 
         }
         else {
@@ -138,7 +140,7 @@ void loop() {
             debugPrint("Turn Back");
             
             turn(BACK, tof);
-            delay(600);
+            delay(6000);
 
         }
 

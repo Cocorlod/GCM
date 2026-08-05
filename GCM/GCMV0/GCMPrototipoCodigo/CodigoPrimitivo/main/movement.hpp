@@ -16,8 +16,8 @@
 #define PWM_FREQ 20000
 #define PWM_RESOLUTION 8
 
-#define TURN_PWM 127
-#define FORWARD_PWM 80
+#define TURN_PWM 200
+#define FORWARD_PWM 60
 
 #define TURN_DELAY 200
 
@@ -39,6 +39,6 @@ void turnLeft();
 void turnRight();
 void turnBack();
 
-void turn(Turn turn);
+void turn(Turn dir, ToFSensor& tof);
 
 void stopMotors();

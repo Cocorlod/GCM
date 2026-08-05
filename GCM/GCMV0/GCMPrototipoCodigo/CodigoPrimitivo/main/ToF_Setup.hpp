@@ -27,10 +27,9 @@
 #define PIN_XSHUT6 7
 
 #define SENSOR_COUNT 6
-#define OFFSET_CENTER 10
 
 static constexpr int16_t MAX_ALLOWED_DIFF = 90;
-static constexpr int16_t FRONT_WALL_THRESHOLD = 60;
+static constexpr int16_t FRONT_WALL_THRESHOLD = 80;
 static constexpr int16_t SIDE_WALL_THRESHOLD = 250;
 
 static constexpr uint16_t SENSOR_INVALID_DISTANCE = 9999;
