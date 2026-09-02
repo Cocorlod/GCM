@@ -1,0 +1,10 @@
+Output: Generates pick and place files
+Type  : Pick Place
+From  : Variant [[No Variations]] of PCB Document [GCM_PCB.PcbDoc]
+   Generated File[Pick Place for GCM_PCB.csv]
+
+
+Files Generated   : 1
+Documents Printed : 0
+
+Finished Output Generation At 5:43:59 PM On 8/27/2026
