@@ -20,7 +20,7 @@ static void executeMove(TurnDecision decision, Heading& heading) {
         case TURN_RIGHT:
             stopMotors();
             delay(DELAY_STOP_MS);
-            turn(RIGHT);  
+            turn(RIGHT);
             heading = rotate(RIGHT, heading);
             stopMotors();
             delay(DELAY_STOP_MS);

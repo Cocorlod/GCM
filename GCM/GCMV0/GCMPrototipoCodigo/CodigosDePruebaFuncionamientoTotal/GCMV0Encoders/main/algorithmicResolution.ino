@@ -49,7 +49,7 @@ bool cellComplete() {
     long dr = abs(rightEncoder.getCount() - cellStartRightCount);
     float distanceMM = ((dl + dr) / 2.0f) * MM_PER_COUNT;
 
-    if (distanceMM > CELL_LENGTH_MM) {
+    if (distanceMM >= CELL_LENGTH_MM) {
         cellTravelActive = false;
         return true;
     }
@@ -360,6 +360,10 @@ void resetExploration() {
     dfsStackSize = 0;
     dfsDone = false;
     goalFound = false;
+
+    for (uint16_t i = 0; i < maze.cellCount(); ++i) {
+        maze.getCell(i).visited = false;
+    }
 
     speedrunPathLength = 0;
     speedrunCursor = 0;
