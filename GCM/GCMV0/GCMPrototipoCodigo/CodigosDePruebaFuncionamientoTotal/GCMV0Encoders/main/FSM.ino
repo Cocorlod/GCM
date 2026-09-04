@@ -97,7 +97,7 @@ void RobotFSM::reinitializeForExploration() {
     pathKnown = false;
     goalSignal = false;
 
-    resetExploration();
+    resetExploration(maze);
 }
 
 void RobotFSM::beginExploration() {

@@ -47,7 +47,14 @@ bool cellComplete() {
  
     long dl = abs(leftEncoder.getCount() - cellStartLeftCount);
     long dr = abs(rightEncoder.getCount() - cellStartRightCount);
-    float distanceMM = ((dl + dr) / 2.0f) * MM_PER_COUNT;
+    float leftDistanceMM =
+    fabs((float)dl) * LEFT_MM_PER_COUNT;
+
+    float rightDistanceMM =
+    fabs((float)dr) * RIGHT_MM_PER_COUNT;
+
+    float distanceMM =
+    (leftDistanceMM + rightDistanceMM) / 2.0f;
 
     if (distanceMM >= CELL_LENGTH_MM) {
         cellTravelActive = false;
@@ -356,7 +363,7 @@ bool returnPathFinished() {
     return !returnPathReady || returnCursor >= returnPathLength;
 }
 
-void resetExploration() {
+void resetExploration(Maze& maze) {
     dfsStackSize = 0;
     dfsDone = false;
     goalFound = false;
