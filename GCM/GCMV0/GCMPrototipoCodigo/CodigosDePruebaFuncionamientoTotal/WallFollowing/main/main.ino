@@ -37,18 +37,19 @@ void determineTurnDirection() {
   if(!isThereWall(WALL_LEFT)) {
     turn90toLeft();
     robotState = MOVING;
+    return;
   } 
+
   else if(!isThereWall(WALL_RIGHT)) {
     turn90toRight();
     robotState = MOVING;
-  } else {
-      turnBack();
-      robotState = MOVING;
-    }
+    return;
+  } 
 
-  if(isThereWall(WALL_LEFT) && isThereWall(WALL_RIGHT)) {
+  else if(isThereWall(WALL_LEFT) && isThereWall(WALL_RIGHT)) {
     turnBack();
     robotState = MOVING;
+    return;
   }
 }
 
@@ -96,13 +97,12 @@ void loop() {
 
     if(frontWallDetected()) {
       stopMotors();
+      delay(5000);
       robotState = TURNING;
       turnStartLeftCount = leftEncoder.getCount();
       turnStartRightCount = rightEncoder.getCount();
       return;
     }
-
-    delay(TURNING_TO_MOVING);
 
     updateTofControl();
     updateSpeedControl();

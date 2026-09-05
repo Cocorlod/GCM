@@ -9,7 +9,7 @@
 
 static constexpr float WHEEL_DIAMETER_MM = 19.0f;
 static constexpr float WHEEL_CIRCUMFERENCE_MM = PI * WHEEL_DIAMETER_MM;
-static constexpr float WHEEL_TRACK_MM = 109.5f;
+static constexpr float WHEEL_TRACK_MM = 112.5f;
 static constexpr float ENCODER_CPR_MOTOR_SHAFT = 12.0f;
 static constexpr float GEAR_RATIO = 4.995f;
 static constexpr float LEFT_COUNTS_PER_WHEEL_REV = ENCODER_CPR_MOTOR_SHAFT * GEAR_RATIO * 4.0f;
@@ -18,9 +18,10 @@ static constexpr float LEFT_MM_PER_COUNT = WHEEL_CIRCUMFERENCE_MM / LEFT_COUNTS_
 static constexpr float RIGHT_MM_PER_COUNT = WHEEL_CIRCUMFERENCE_MM / RIGHT_COUNTS_PER_WHEEL_REV;
 static constexpr float TURN_DISTANCE_MM_180 = PI * WHEEL_TRACK_MM;
 static constexpr float TURN_DISTANCE_MM_90 = (PI * WHEEL_TRACK_MM) / 2;
-static constexpr long RIGHT_TURN_COUNTS_180 = (long)(TURN_DISTANCE_MM_180 / RIGHT_MM_PER_COUNT);
-static constexpr long LEFT_TURN_COUNTS_90 = (long)(TURN_DISTANCE_MM_90 / LEFT_MM_PER_COUNT);
-static constexpr long RIGHT_TURN_COUNTS_90 = (long)(TURN_DISTANCE_MM_90 / RIGHT_MM_PER_COUNT);
+static constexpr long RIGHT_TURN_COUNTS_180 = ceil((long)(TURN_DISTANCE_MM_180 / RIGHT_MM_PER_COUNT) / 4.25);
+static constexpr long LEFT_TURN_COUNTS_180 = ceil((long)(TURN_DISTANCE_MM_180 / LEFT_MM_PER_COUNT) / 8);
+static constexpr long LEFT_TURN_COUNTS_90 = ceil((long)(TURN_DISTANCE_MM_90 / LEFT_MM_PER_COUNT) / 4);
+static constexpr long RIGHT_TURN_COUNTS_90 = ceil((long)(TURN_DISTANCE_MM_90 / RIGHT_MM_PER_COUNT) / 4);
 
 class Encoder {
 public:

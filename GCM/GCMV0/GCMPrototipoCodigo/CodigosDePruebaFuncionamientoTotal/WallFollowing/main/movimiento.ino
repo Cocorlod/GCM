@@ -96,11 +96,13 @@ void turn90toLeft() {
             pwm = 70;
         }
 
-        ledcWrite(PIN_PWMA, pwm);
-        ledcWrite(PIN_PWMB, 0);
+        ledcWrite(PIN_PWMA, 0);
+        ledcWrite(PIN_PWMB, pwm);
 
     }
     stopMotors();
+
+    return;
 }
 
 void turn90toRight() {
@@ -140,33 +142,35 @@ void turn90toRight() {
 
     }
     stopMotors();
+
+    return;
 }
 
 void turnBack() {
     digitalWrite(PIN_STBY, HIGH);
 
-    digitalWrite(PIN_AIN1, LOW);
+    digitalWrite(PIN_AIN1, HIGH);
     digitalWrite(PIN_AIN2, LOW);
 
-    digitalWrite(PIN_BIN1, HIGH);
-    digitalWrite(PIN_BIN2, LOW);
+    digitalWrite(PIN_BIN1, LOW);
+    digitalWrite(PIN_BIN2, HIGH);
 
     while(true) {
         long currentCount;
 
         noInterrupts();
 
-        currentCount = rightEncoder.getCount();
+        currentCount = leftEncoder.getCount();
 
         interrupts();
 
-        long counts = labs(currentCount - turnStartRightCount); 
+        long counts = labs(currentCount - turnStartLeftCount); 
 
-        if(counts >= RIGHT_TURN_COUNTS_180) {
+        if(counts >= LEFT_TURN_COUNTS_180) {
             break;
         }
 
-        long remaining = RIGHT_TURN_COUNTS_180 - counts;
+        long remaining = LEFT_TURN_COUNTS_180 - counts;
 
         int pwm = TURN_PWM;
 
@@ -174,9 +178,11 @@ void turnBack() {
             pwm = 70;
         }
 
-        ledcWrite(PIN_PWMA, 0);
+        ledcWrite(PIN_PWMA, pwm);
         ledcWrite(PIN_PWMB, pwm);
 
     }
     stopMotors();
+
+    return;
 }
