@@ -1,6 +1,11 @@
 #include "encoders.h"
 #include "movimiento.h"
 
+StallRecovery leftStall;
+StallRecovery rightStall;
+int leftPWM = BASE_PWM_LEFT;
+int rightPWM = BASE_PWM_RIGHT;
+
 void setMotors(int left, int right) {
     left = constrain(left, -255, 255);
     right = constrain(right, -255, 255);
@@ -36,7 +41,7 @@ void stopMotors() {
 }
 
 void updateSpeedControl() {
-    uint32_t now = millis();
+    uint32_t now = millis();    
 
     if (now - lastSpeedControlTime < SPEED_LOOP_PERIOD_MS) return;
 
@@ -60,6 +65,9 @@ void updateSpeedControl() {
 
     leftPWM = constrain((int)(BASE_PWM_LEFT + leftCorrection - tofCorrection), 0, 255);
     rightPWM = constrain((int)(BASE_PWM_RIGHT + rightCorrection + tofCorrection), 0, 255);
+
+    int leftDrive  = applyStallRecovery(leftStall,  leftPWM,  measuredLeftSpeed,  now, LEFT_CAN_REVERSE);
+    int rightDrive = applyStallRecovery(rightStall, rightPWM, measuredRightSpeed, now, true);
 
     setMotors(leftPWM, rightPWM);
 }
@@ -92,9 +100,9 @@ void turn90toLeft() {
 
         int pwm = TURN_PWM;
 
-        if (remaining < RIGHT_TURN_COUNTS_90 / 4) {
+        /*if (remaining < RIGHT_TURN_COUNTS_90 / 4) {
             pwm = 70;
-        }
+        }*/
 
         ledcWrite(PIN_PWMA, 0);
         ledcWrite(PIN_PWMB, pwm);
@@ -133,9 +141,9 @@ void turn90toRight() {
 
         int pwm = TURN_PWM;
 
-        if (remaining < LEFT_TURN_COUNTS_90 / 4) {
+      /*  if (remaining < LEFT_TURN_COUNTS_90 / 4) {
             pwm = 70;
-        }
+        }*/
 
         ledcWrite(PIN_PWMA, pwm);
         ledcWrite(PIN_PWMB, 0);
@@ -174,9 +182,9 @@ void turnBack() {
 
         int pwm = TURN_PWM;
 
-        if (remaining < RIGHT_TURN_COUNTS_180 / 4) {
+       /* if (remaining < RIGHT_TURN_COUNTS_180 / 4) {
             pwm = 70;
-        }
+        }*/
 
         ledcWrite(PIN_PWMA, pwm);
         ledcWrite(PIN_PWMB, pwm);
@@ -187,44 +195,43 @@ void turnBack() {
     return;
 }
 
-void calibrateHeadingBeforeTurn() {
-    resetTofController();   // don't let stale driving-derivative spike the first pivot command
+int applyStallRecovery(StallRecovery& stall, int commandedPWM, float measuredSpeed, uint32_t now, bool canReverse) {
+    if (stall.kicking) {
+        uint32_t elapsed = now - stall.kickStartTime;
 
-    uint32_t startTime = millis();
-    uint32_t lastControl = startTime;
-    uint8_t consecutiveAligned = 0;
-
-    while (millis() - startTime < PRETURN_CALIBRATION_TIMEOUT_MS) {
-        uint32_t now = millis();
-
-        if (now - lastControl < TOF_CONTROL_PERIOD_MS) {
-            delay(1);   // yield so this doesn't trip the watchdog — see note below
-            continue;
-        }
-
-        float dt = (now - lastControl) * 0.001f;
-        lastControl = now;
-
-        readToFSensors();
-        float correction = calculateTofCorrection(dt);
-
-        if (fabs(correction) <= PRETURN_ALIGN_TOLERANCE) {
-            stopMotors();
-            consecutiveAligned++;
-            if (consecutiveAligned >= PRETURN_ALIGN_REQUIRED_CONSECUTIVE) break;
-            continue;
-        }
-        consecutiveAligned = 0;
-
-        int pwm = (int)constrain(fabs(correction) * PRETURN_ROTATE_KP, 0, PRETURN_ROTATE_PWM_MAX);
-
-        digitalWrite(PIN_STBY, HIGH);
-        if (correction > 0) {
-            setMotors(-pwm, pwm);   // matches the same sign convention as -tofCorrection/+tofCorrection in updateSpeedControl()
+        if (canReverse) {
+            if (elapsed < KICK_DURATION_MS) {
+                return (commandedPWM >= 0) ? -KICK_PWM : KICK_PWM;
+            }
         } else {
-            setMotors(pwm, -pwm);
+            if (elapsed < KICK_RELEASE_MS) {
+                return 0;  // unload
+            }
+            if (elapsed < KICK_RELEASE_MS + KICK_DURATION_MS) {
+                return (commandedPWM >= 0) ? KICK_FULL_PWM : -KICK_FULL_PWM;  // slam
+            }
         }
+
+        stall.kicking = false;
+        stall.lowSpeedSince = 0;
+        return commandedPWM;
     }
 
-    stopMotors();
+    if (abs(commandedPWM) < STALL_PWM_MIN || measuredSpeed >= STALL_SPEED_MM_S) {
+        stall.lowSpeedSince = 0;
+        return commandedPWM;
+    }
+
+    if (stall.lowSpeedSince == 0) {
+        stall.lowSpeedSince = now;
+        return commandedPWM;
+    }
+
+    if (now - stall.lowSpeedSince >= STALL_TIME_MS) {
+        stall.kicking = true;
+        stall.kickStartTime = now;
+        return canReverse ? ((commandedPWM >= 0) ? -KICK_PWM : KICK_PWM) : 0;
+    }
+
+    return commandedPWM;
 }

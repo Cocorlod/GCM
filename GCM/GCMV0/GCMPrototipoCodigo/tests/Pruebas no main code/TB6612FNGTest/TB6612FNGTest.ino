@@ -27,12 +27,12 @@ void loop() {
   // put your main code here, to run repeatedly:
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
-  ledcWrite(PWMA, 20);
+  ledcWrite(PWMA, 100);
   delay(2000);
 
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, HIGH);
-  ledcWrite(PWMA, 20);
+  ledcWrite(PWMA, 100);
   delay(2000);
 
   digitalWrite(AIN1, HIGH);
@@ -42,12 +42,12 @@ void loop() {
 
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
-  ledcWrite(PWMB, 20);
+  ledcWrite(PWMB, 100);
   delay(2000);
 
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
-  ledcWrite(PWMB, 20);
+  ledcWrite(PWMB, 100);
   delay(2000);
 
   digitalWrite(BIN1, HIGH);

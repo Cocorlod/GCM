@@ -12,7 +12,7 @@ Encoder rightEncoder;
 #define PIN_BUTTON 47
 
 #define IR_PIN 15
-#define IR_THRESHOLD 2500
+#define IR_THRESHOLD 30
 
 #define TURNING_TO_MOVING 1000
 
@@ -24,7 +24,7 @@ bool goalDetected() {
     static uint8_t consecutiveHits = 0;
     static constexpr uint8_t REQUIRED_CONSECUTIVE = 4;
 
-    if (analogRead(IR_PIN) >= IR_THRESHOLD) {
+    if (analogRead(IR_PIN) <= IR_THRESHOLD) {
         if (consecutiveHits < 255) consecutiveHits++;
     } else {
         consecutiveHits = 0;
@@ -36,18 +36,24 @@ bool goalDetected() {
 void determineTurnDirection() {
   if(!isThereWall(WALL_LEFT)) {
     turn90toLeft();
+    readToFSensors();
+    resetController();
     robotState = MOVING;
     return;
   } 
 
   else if(!isThereWall(WALL_RIGHT)) {
     turn90toRight();
+    readToFSensors();
+    resetController();
     robotState = MOVING;
     return;
   } 
 
   else if(isThereWall(WALL_LEFT) && isThereWall(WALL_RIGHT)) {
     turnBack();
+    readToFSensors();
+    resetController();
     robotState = MOVING;
     return;
   }
@@ -97,6 +103,7 @@ void loop() {
 
     if(frontWallDetected()) {
       stopMotors();
+      //calibrateHeadingBeforeTurn();
       delay(5000);
       robotState = TURNING;
       turnStartLeftCount = leftEncoder.getCount();

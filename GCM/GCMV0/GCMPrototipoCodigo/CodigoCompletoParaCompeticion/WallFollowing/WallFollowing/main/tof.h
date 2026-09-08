@@ -43,13 +43,6 @@ enum WallSides : int8_t {
     WALL_LEFT = -1
 };
 
-enum SideWallConfig {
-    SIDE_WALLS_BOTH,
-    SIDE_WALL_LEFT_ONLY,
-    SIDE_WALL_RIGHT_ONLY,
-    SIDE_WALLS_NONE
-};
-
 VL53L1X sensors[SENSOR_COUNT];
 uint8_t sensorPins[SENSOR_COUNT] = { XSHUT_FRONT_R, XSHUT_FRONT_L, XSHUT_RIGHT_F, XSHUT_RIGHT_B, XSHUT_LEFT_B, XSHUT_LEFT_F };
 uint8_t sensorAddresses[SENSOR_COUNT] = { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35 };
@@ -80,5 +73,3 @@ bool frontWallDetected();
 void updateTofControl();
 bool isThereWall(WallSides side);
 void readToFSensors();
-float calculateTofCorrection(float dt);   // add
-void resetTofController();  

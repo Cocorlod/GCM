@@ -1,9 +1,5 @@
 #include "tof.h"
 
-// ---------------------------------------------------------------------------
-// PD helpers
-// ---------------------------------------------------------------------------
-
 float updatePD(PDController& pd, float error, float dt) {
     float derivative = (error - pd.previousError) / dt;
     pd.filteredDerivative = TOF_DERIVATIVE_ALPHA * pd.filteredDerivative + (1.0f - TOF_DERIVATIVE_ALPHA) * derivative;
@@ -11,25 +7,6 @@ float updatePD(PDController& pd, float error, float dt) {
     pd.previousError = error;
     return output;
 }
-
-void resetPD(PDController& pd) {
-    pd.previousError = 0.0f;
-    pd.filteredDerivative = 0.0f;
-}
-
-void resetTofController() {
-    resetPD(leftTofPD);
-    resetPD(rightTofPD);
-    resetPD(backTofPD);
-    resetPD(frontTofPD);
-    resetPD(diagonalLB_RF_PD);
-    resetPD(diagonalLF_RB_PD);
-    tofCorrection = 0.0f;
-}
-
-// ---------------------------------------------------------------------------
-// Setup
-// ---------------------------------------------------------------------------
 
 void setupToF() {
     Wire.begin(I2C_SDA, I2C_SCL);
@@ -62,10 +39,6 @@ void setupToF() {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Validity checks
-// ---------------------------------------------------------------------------
-
 bool validSideWall(uint8_t frontSensor, uint8_t backSensor) {
     return ok[frontSensor] && ok[backSensor] && distance[frontSensor] > SENSOR_INVALID_DISTANCE && distance[backSensor] > SENSOR_INVALID_DISTANCE && distance[frontSensor] < SIDE_WALL_THRESHOLD && distance[backSensor] < SIDE_WALL_THRESHOLD;
 }
@@ -75,10 +48,6 @@ bool validCrossPair(uint8_t sensorA, uint8_t sensorB) {
         && distance[sensorA] > SENSOR_INVALID_DISTANCE && distance[sensorB] > SENSOR_INVALID_DISTANCE
         && distance[sensorA] < SIDE_WALL_THRESHOLD && distance[sensorB] < SIDE_WALL_THRESHOLD;
 }
-
-// ---------------------------------------------------------------------------
-// Alignment error
-// ---------------------------------------------------------------------------
 
 int16_t alignmentError(ErrorSection errorSection) {
     switch (errorSection) {
@@ -122,17 +91,6 @@ bool frontWallDetected() {
     return averageDistance <= FRONT_WALL_THRESHOLD;
 }
 
-// ---------------------------------------------------------------------------
-// Wall configuration
-// ---------------------------------------------------------------------------
-
-SideWallConfig getSideWallConfig(bool leftValid, bool rightValid) {
-    if (leftValid && rightValid) return SIDE_WALLS_BOTH;
-    if (leftValid) return SIDE_WALL_LEFT_ONLY;
-    if (rightValid) return SIDE_WALL_RIGHT_ONLY;
-    return SIDE_WALLS_NONE;
-}
-
 float calculateTofCorrection(float dt) {
     bool leftValid = validSideWall(LEFT_F, LEFT_B);
     bool rightValid = validSideWall(RIGHT_F, RIGHT_B);
@@ -144,89 +102,50 @@ float calculateTofCorrection(float dt) {
     float correctionSum = 0.0f;
     int correctionCount = 0;
 
-    SideWallConfig sideConfig = getSideWallConfig(leftValid, rightValid);
+    if (leftValid) {
+        float error = alignmentError(LEFT_ERROR);
+        correctionSum += updatePD(leftTofPD, error, dt);
+        correctionCount++;
+    }
 
-    switch (sideConfig) {
-        case SIDE_WALLS_BOTH: {
-            // Corridor: both walls seen, average their skew corrections so a
-            // noisy reading on one side doesn't dominate the correction.
-            float leftError = alignmentError(LEFT_ERROR);
-            float rightError = alignmentError(RIGHT_ERROR);
-            correctionSum += updatePD(leftTofPD, leftError, dt);
-            correctionSum += updatePD(rightTofPD, rightError, dt);
-            correctionCount += 2;
-            break;
-        }
-
-        case SIDE_WALL_LEFT_ONLY: {
-            // Only the left wall is in range - hug it, since it's the only
-            // side reference available.
-            float error = alignmentError(LEFT_ERROR);
-            correctionSum += updatePD(leftTofPD, error, dt);
-            correctionCount++;
-            resetPD(rightTofPD);
-            break;
-        }
-
-        case SIDE_WALL_RIGHT_ONLY: {
-            float error = alignmentError(RIGHT_ERROR);
-            correctionSum += updatePD(rightTofPD, error, dt);
-            correctionCount++;
-            resetPD(leftTofPD);
-            break;
-        }
-
-        case SIDE_WALLS_NONE:
-            // Open cell, no side wall to align against - nothing to
-            // contribute here; whatever the back/front/diagonal cross-pairs
-            // give below (if anything) is all that's left to steer with.
-            resetPD(leftTofPD);
-            resetPD(rightTofPD);
-            break;
+    if (rightValid) {
+        float error = alignmentError(RIGHT_ERROR);
+        correctionSum += updatePD(rightTofPD, error, dt);
+        correctionCount++;
     }
 
     if (backValid) {
         float error = alignmentError(BACK_ERROR);
         correctionSum += updatePD(backTofPD, error, dt);
         correctionCount++;
-    } else {
-        resetPD(backTofPD);
     }
 
     if (frontValid) {
         float error = alignmentError(FRONT_ERROR);
         correctionSum += updatePD(frontTofPD, error, dt);
         correctionCount++;
-    } else {
-        resetPD(frontTofPD);
     }
 
     if (diagonal1Valid) {
         float error = alignmentError(LB_RF_DIAGONAL_ERROR);
         correctionSum += updatePD(diagonalLB_RF_PD, error, dt);
         correctionCount++;
-    } else {
-        resetPD(diagonalLB_RF_PD);
     }
 
     if (diagonal2Valid) {
         float error = alignmentError(LF_RB_DIAGONAL_ERROR);
         correctionSum += updatePD(diagonalLF_RB_PD, error, dt);
         correctionCount++;
-    } else {
-        resetPD(diagonalLF_RB_PD);
     }
 
     if (correctionCount == 0) {
         return 0.0f;
     }
 
-    return constrain(correctionSum / (float)correctionCount, -MAX_TOF_CORRECTION, MAX_TOF_CORRECTION);
-}
+    float correction = correctionSum / (float)correctionCount;
 
-// ---------------------------------------------------------------------------
-// Sensor reads / wall distance helpers
-// ---------------------------------------------------------------------------
+    return constrain(correctionSum / correctionCount, -MAX_TOF_CORRECTION, MAX_TOF_CORRECTION);
+}
 
 void readToFSensors() {
     for (int i = 0; i < SENSOR_COUNT; i++) {
@@ -298,9 +217,21 @@ bool isThereWall(WallSides side) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Main update
-// ---------------------------------------------------------------------------
+void resetTofController() {
+    leftTofPD.previousError = 0.0f;
+    leftTofPD.filteredDerivative = 0.0f;
+    rightTofPD.previousError = 0.0f;
+    rightTofPD.filteredDerivative = 0.0f;
+    backTofPD.previousError = 0.0f;
+    backTofPD.filteredDerivative = 0.0f;
+    frontTofPD.previousError = 0.0f;
+    frontTofPD.filteredDerivative = 0.0f;
+    diagonalLB_RF_PD.previousError = 0.0f;
+    diagonalLB_RF_PD.filteredDerivative = 0.0f;
+    diagonalLF_RB_PD.previousError = 0.0f;
+    diagonalLF_RB_PD.filteredDerivative = 0.0f;
+    tofCorrection = 0.0f;
+}
 
 void updateTofControl() {
     uint32_t now = millis();

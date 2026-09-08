@@ -22,6 +22,12 @@
 #define PIN_PWMA 9
 #define PIN_PWMB 10
 
+#define PRETURN_CALIBRATION_TIMEOUT_MS 3000
+#define PRETURN_ALIGN_TOLERANCE 1.5f     // same units as tofCorrection (±MAX_TOF_CORRECTION scale, not raw mm)
+#define PRETURN_ALIGN_REQUIRED_CONSECUTIVE 5
+#define PRETURN_ROTATE_KP 3.0f
+#define PRETURN_ROTATE_PWM_MAX 80
+
 int leftPWM = BASE_PWM_LEFT;
 int rightPWM = BASE_PWM_RIGHT;
 
