@@ -133,6 +133,90 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=
 
+[GeneratedDocument1]
+DocumentPath=Project Outputs for Placa Infrarrojos\BOM\Bill of Materials-PCB1.csv
+DItemRevisionGUID=
+
+[GeneratedDocument2]
+DocumentPath=Project Outputs for Placa Infrarrojos\NC Drill\PCB1.DRR
+DItemRevisionGUID=
+
+[GeneratedDocument3]
+DocumentPath=Project Outputs for Placa Infrarrojos\NC Drill\PCB1.TXT
+DItemRevisionGUID=
+
+[GeneratedDocument4]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Copper_Signal_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument5]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Copper_Signal_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument6]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Drawing_1.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument7]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Drillmap_1.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument8]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Keep-out.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument9]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Legend_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument10]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Legend_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument11]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Mechanical_1.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument12]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Mechanical_13.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument13]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Mechanical_15.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument14]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Pads_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument15]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Pads_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument16]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Paste_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument17]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Paste_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument18]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Profile.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument19]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Soldermask_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument20]
+DocumentPath=Project Outputs for Placa Infrarrojos\Gerber\PCB1_Soldermask_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument21]
+DocumentPath=Project Outputs for Placa Infrarrojos\Pick Place\Pick Place for PCB1.csv
+DItemRevisionGUID=
+
 [Configuration1]
 Name=Sources
 ParameterCount=0
