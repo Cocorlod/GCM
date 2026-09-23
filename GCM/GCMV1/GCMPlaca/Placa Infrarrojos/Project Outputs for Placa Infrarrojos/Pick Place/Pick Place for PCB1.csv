@@ -1,0 +1,22 @@
+Altium Designer Pick and Place Locations
+C:\Users\Administrator\Desktop\Cosas\GCMProyectoLimpio\GCM\GCMV1\GCMPlaca\Placa Infrarrojos\Project Outputs for Placa Infrarrojos\Pick Place\Pick Place for PCB1.csv
+
+========================================================================================================================
+File Design Information:
+
+Date:       17/09/26
+Time:       00:31
+Revision:   929c386b5169c3fa40b1066bd8d46897e046075a
+Variant:    No variations
+Units used: mm
+
+"Designator","Comment","Layer","Footprint","Center-X(mm)","Center-Y(mm)","Rotation","Description"
+"R1","C865639","TopLayer","RESC2012X60N","9,2130mm","7,8800mm","270","5.6 Ohm 1/4W Thick Film Resistor 1206 Chip - Surface Mount"
+"R4","C17970","TopLayer","RESC3115X65N","9,5630mm","5,0100mm","180","5.6 Ohm 1/4W Thick Film Resistor 1206 Chip - Surface Mount"
+"C2","C541465","TopLayer","CAPC1005X55N","3,9130mm","4,9700mm","270","10000 pF ±5% 25V Ceramic Capacitor X7R 0402 (1005 Metric)"
+"C1","C126615","TopLayer","CAP_CC1210_YAG","1,6830mm","6,2200mm","270","Description"
+"R3","C281778","TopLayer","RESC1005X35N","11,5930mm","12,3746mm","90","RT Series 0402 0.063 W 24 kOhm ±1 % ±50 ppm/°C SMT Thin Film Chip Resistor"
+"R2","C705627","TopLayer","RESC1005X35N","10,5930mm","12,3746mm","90","RT Series 0402 0.063 W 24 kOhm ±1 % ±50 ppm/°C SMT Thin Film Chip Resistor"
+"Q2","C2830301","TopLayer","SOT50P160X90-3N","11,0930mm","14,9766mm","270","MOSFET N-Channel 20V 0.63A SOT523 | Diodes Inc DMG1012T-7"
+"Q1","C118301","TopLayer","XDCR_TEFT4300","6,0000mm","7,6010mm","0","Phototransistors 925nm Top View Radial, 3mm Dia (T-1)"
+"D1","C2900372","TopLayer","DIO_SFH_4545","6,0000mm","14,1940mm","180","Infrared (IR) Emitter 950nm 1.5V 100mA 550mW/sr @ 100mA 10° Radial"
